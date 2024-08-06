@@ -1,0 +1,6 @@
+[workspace]
+members  = ["audiospeedhackcli", "speedhacklib"]
+resolver = "2"
+
+[alias]
+b = "build --release -p speedhacklib"
