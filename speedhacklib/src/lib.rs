@@ -13,6 +13,7 @@ use windows::{
     core::{HSTRING, PCSTR, PCWSTR},
     Win32::{
         Foundation::{BOOL, HANDLE, HWND},
+        Media::Audio::{HWAVEOUT, WAVEHDR},
         System::{
             LibraryLoader::{GetModuleHandleW, GetProcAddress},
             SystemServices::{
@@ -22,28 +23,47 @@ use windows::{
     },
 };
 
-static_detour! {
-  static MessageBoxWHook: unsafe extern "system" fn(HWND, PCWSTR, PCWSTR, u32) -> c_int;
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
+
+macro_rules! detour_fn_type {
+    ($(($hooktype: ident => $($content: tt)*))*) => {
+        static_detour! {
+            $(static $hooktype: $($content)*;)*
+        }
+        $(type $hooktype = $($content)*;)*
+    };
 }
 
-// A type alias for `MessageBoxW` (makes the transmute easy on the eyes)
-type FnMessageBoxW = unsafe extern "system" fn(HWND, PCWSTR, PCWSTR, u32) -> c_int;
+detour_fn_type!(
+    (MessageBoxWHook => unsafe extern "system" fn(HWND, PCWSTR, PCWSTR, u32) -> c_int)
+    (WaveOutWriteHook => unsafe extern "system" fn(HWAVEOUT, *mut WAVEHDR, u32) -> u32)
+);
 
-/// Called when the DLL is attached to the process.
-unsafe fn main() -> Result<(), Box<dyn Error>> {
-    // Retrieve an absolute address of `MessageBoxW`. This is required for
-    // libraries due to the import address table. If `MessageBoxW` would be
-    // provided directly as the target, it would only hook this DLL's
-    // `MessageBoxW`. Using the method below an absolute address is retrieved
-    // instead, detouring all invocations of `MessageBoxW` in the active process.
-    let address = get_module_symbol_address("user32.dll", "MessageBoxW")
-        .expect("could not find 'MessageBoxW' address");
-    let target: FnMessageBoxW = mem::transmute(address);
+macro_rules! inject {
+    ($module: expr, $symbol: expr, $hooktype: ident, $function: ident) => {
+        if let Some(address) = get_module_symbol_address($module, $symbol) {
+            let target: $hooktype = mem::transmute(address);
+            // Initialize AND enable the detour (the 2nd parameter can also be a closure)
+            $hooktype.initialize(target, $function)?.enable()?;
+        }
+    };
+}
 
-    // Initialize AND enable the detour (the 2nd parameter can also be a closure)
-    MessageBoxWHook
-        .initialize(target, messageboxw_detour)?
-        .enable()?;
+fn inject_all() -> Result<()> {
+    unsafe {
+        // Called when the DLL is attached to the process.
+        // Retrieve an absolute address of `MessageBoxW`. This is required for
+        // libraries due to the import address table. If `MessageBoxW` would be
+        // provided directly as the target, it would only hook this DLL's
+        // `MessageBoxW`. Using the method below an absolute address is retrieved
+        // instead, detouring all invocations of `MessageBoxW` in the active process.
+        inject!(
+            "user32.dll",
+            "MessageBoxW",
+            MessageBoxWHook,
+            messageboxw_detour
+        );
+    }
     Ok(())
 }
 
@@ -73,7 +93,7 @@ unsafe extern "system" fn DllMain(_hinst: HANDLE, reason: u32, _reserved: *mut c
     match reason {
         DLL_PROCESS_ATTACH => {
             println!("attaching");
-            unsafe { main().unwrap() }
+            inject_all().unwrap_or_else(|e| panic!("injection error: {e:?}"));
         }
         DLL_PROCESS_DETACH => {
             println!("detaching");
