@@ -4,4 +4,4 @@ name    = "audiospeedhackcli"
 version = "0.1.0"
 
 [dependencies]
-dll-syringe = "0.15.2"
+dll-syringe = "0.16.0"
