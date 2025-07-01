@@ -17,7 +17,7 @@ features = [
   "Win32_UI_WindowsAndMessaging",
   "Win32_Media_Audio",
 ]
-version = "0.61.1"
+version = "0.61.3"
 
 [lib]
 crate-type = ["cdylib"]
