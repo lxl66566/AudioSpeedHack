@@ -269,7 +269,7 @@ dependencies = [
 [[package]]
 name = "retour"
 version = "0.4.0-alpha.3"
-source = "git+https://github.com/Hpmason/retour-rs#02c7c4c18cf87651b30b684ac9944dd47d2593ec"
+source = "git+https://github.com/Hpmason/retour-rs#831ede3ef7f85dce7e4e3a4bd0a574a07f477534"
 dependencies = [
  "cfg-if",
  "generic-array",
