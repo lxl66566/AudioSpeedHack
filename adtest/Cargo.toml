@@ -1,0 +1,8 @@
+[package]
+edition = "2021"
+name    = "adtest"
+version = "0.1.0"
+
+[dependencies]
+hound = "3.5.1"
+rubato = "0.15.0"

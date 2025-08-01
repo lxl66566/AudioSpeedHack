@@ -1,12 +1,10 @@
 [package]
 edition = "2021"
-name = "speedhacklib"
+name    = "speedhacklib"
 version = "0.1.0"
 
 [dependencies]
-retour = { git = "https://github.com/Hpmason/retour-rs", features = [
-  "static-detour",
-] }
+retour = { git = "https://github.com/Hpmason/retour-rs", features = ["static-detour"] }
 
 [target."cfg(windows)".dependencies.windows]
 features = [
@@ -21,4 +19,4 @@ version = "0.61.3"
 
 [lib]
 crate-type = ["cdylib"]
-name = "speedhacklib"
+name       = "speedhacklib"
