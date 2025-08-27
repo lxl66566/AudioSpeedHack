@@ -23,7 +23,7 @@ struct ProcessInfo {
   std::wstring name;
 };
 
-// --- 共享内存部分 (无变化) ---
+// --- 共享内存部分 ---
 const wchar_t *MAPPING_NAME = L"GlobalAudioSpeedControl";
 HANDLE hMapFile = NULL;
 float *pSharedSpeed = NULL;

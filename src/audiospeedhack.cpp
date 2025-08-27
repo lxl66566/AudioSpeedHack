@@ -26,7 +26,7 @@
 // --- SoundTouch ---
 #include <soundtouch/SoundTouch.h>
 
-// --- 1. 共享内存管理 (来自您的原始代码) ---
+// --- 1. 共享内存管理 ---
 namespace SharedMemory {
 const char *MAPPING_NAME = "GlobalAudioSpeedControl";
 HANDLE hMapFile = NULL;
