@@ -9,7 +9,6 @@
 #include <mmdeviceapi.h>
 #include <xaudio2.h>
 
-
 // C++ Standard Library
 #include <algorithm>
 #include <atomic>
@@ -26,49 +25,24 @@
 // --- SoundTouch ---
 #include <soundtouch/SoundTouch.h>
 
+#include "shared_memory.h"
+
 // --- 1. 共享内存管理 ---
 namespace SharedMemory {
-const char *MAPPING_NAME = "GlobalAudioSpeedControl";
-HANDLE hMapFile = NULL;
-float *pSharedSpeed = NULL;
-
-void Initialize() {
-  hMapFile = OpenFileMappingA(FILE_MAP_READ, FALSE, MAPPING_NAME);
-  if (hMapFile == NULL) {
-    pSharedSpeed = nullptr;
-    OutputDebugStringA(
-        "[AudioHook] Failed to open file mapping. Using default speed 1.0f.");
-    return;
-  }
-  pSharedSpeed =
-      (float *)MapViewOfFile(hMapFile, FILE_MAP_READ, 0, 0, sizeof(float));
-  if (pSharedSpeed == NULL) {
-    OutputDebugStringA(
-        "[AudioHook] Could not map view of file. Using default speed 1.0f.");
-    CloseHandle(hMapFile);
-    hMapFile = NULL;
-  } else {
-    OutputDebugStringA(
-        "[AudioHook] Successfully mapped shared memory for speed control.");
-  }
-}
-
-void Cleanup() {
-  if (pSharedSpeed)
-    UnmapViewOfFile(pSharedSpeed);
-  if (hMapFile)
-    CloseHandle(hMapFile);
-  pSharedSpeed = NULL;
-  hMapFile = NULL;
-}
+// 创建一个静态/全局的共享内存对象实例，模式为Open
+// 它会在DLL加载时自动尝试打开共享内存，在DLL卸载时自动清理
+SharedMemoryValue<float> g_speed_control(L"GlobalAudioSpeedControl",
+                                         SharedMemoryValue<float>::Mode::Open);
 
 float GetSpeedRatio() {
-  if (pSharedSpeed) {
-    float speed = *pSharedSpeed;
-    if (speed > 0.1f && speed < 10.0f) { // 使用一个安全的范围
-      return speed;
-    }
+  // 从对象获取值，如果共享内存无效，则安全地返回默认值1.0f
+  float speed = g_speed_control.GetValue(1.0f);
+
+  // 保持你原有的安全范围检查
+  if (speed > 0.1f && speed < 10.0f) {
+    return speed;
   }
+
   return 1.0f;
 }
 } // namespace SharedMemory
@@ -675,7 +649,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
 
   if (ul_reason_for_call == DLL_PROCESS_ATTACH) {
     DisableThreadLibraryCalls(hModule);
-    SharedMemory::Initialize();
 
     HMODULE hXAudio = GetModuleHandleA("XAudio2_9.dll");
     if (!hXAudio)
@@ -721,8 +694,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
       std::lock_guard lock(g_xaudio2Mutex);
       g_xaudio2Streams.clear();
     }
-
-    SharedMemory::Cleanup();
   }
   return TRUE;
 }

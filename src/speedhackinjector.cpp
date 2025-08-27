@@ -4,12 +4,10 @@
 #include <string>
 #include <vector>
 
-
 #include "injection.h"
 #include "process_utils.h"
 #include "shared_memory.h"
 #include "tui_selection.h"
-
 
 int main(int argc, char *argv[]) {
   // 设置本地化，以正确显示宽字符
@@ -45,7 +43,14 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  if (!CreateSharedMemory()) {
+  std::unique_ptr<SharedMemoryValue<float>> speed_control;
+  try {
+    // 使用智能指针管理，传入名字和创建模式
+    speed_control = std::make_unique<SharedMemoryValue<float>>(
+        L"GlobalAudioSpeedControl", SharedMemoryValue<float>::Mode::Create);
+  } catch (const std::runtime_error &e) {
+    std::wcerr << L"Error initializing shared memory: " << e.what()
+               << std::endl;
     system("pause");
     return 1;
   }
@@ -65,7 +70,8 @@ int main(int argc, char *argv[]) {
   std::wcout << L"\nEnter new speed (e.g., 1.5). Type 'exit' to quit."
              << std::endl;
   float currentSpeed = 1.0f;
-  SetSpeed(currentSpeed); // 设置初始速度
+  speed_control->SetValue(currentSpeed); // 设置初始速度
+
   std::string input;
   while (true) {
     std::wcout << L"> ";
@@ -75,13 +81,12 @@ int main(int argc, char *argv[]) {
     }
     try {
       currentSpeed = std::stof(input);
-      SetSpeed(currentSpeed);
+      if (speed_control->SetValue(currentSpeed)) { // 调用新方法
+        std::wcout << L"Speed set to: " << currentSpeed << std::endl;
+      }
     } catch (const std::exception &) {
       std::wcout << L"Invalid input. Please enter a number." << std::endl;
     }
   }
-
-  // 6. 清理资源
-  CleanupSharedMemory();
   return 0;
 }
