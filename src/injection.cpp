@@ -2,13 +2,14 @@
 #include <iostream>
 #include <vector>
 
-std::wstring GetDllPath() {
+// 接受一个dllName参数
+std::wstring GetDllPath(const std::wstring &dllName) {
   wchar_t buffer[MAX_PATH];
   GetModuleFileNameW(NULL, buffer, MAX_PATH);
   std::wstring exePath = buffer;
   size_t lastSlash = exePath.find_last_of(L"\\/");
   if (std::wstring::npos != lastSlash) {
-    return exePath.substr(0, lastSlash + 1) + L"audiospeedhack.dll";
+    return exePath.substr(0, lastSlash + 1) + dllName; // 使用传入的dllName
   }
   return L"";
 }

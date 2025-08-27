@@ -7,8 +7,8 @@
 #include <string>
 #include <unordered_map>
 
-// 获取 audiospeedhack.dll 的完整路径（假设与 exe 在同一目录）
-std::wstring GetDllPath();
+// 获取指定DLL的完整路径（假设与exe在同一目录）
+std::wstring GetDllPath(const std::wstring &dllName);
 
 // 将 DLL 注入到单个进程中
 bool InjectDll(DWORD processId, const std::wstring &dllPath);

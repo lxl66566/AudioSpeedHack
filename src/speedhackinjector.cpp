@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
   std::wcout.imbue(std::locale(""));
 
   // 1. 检查并获取 DLL 路径
-  std::wstring dllPath = GetDllPath();
+  std::wstring dllPath = GetDllPath(L"audiospeedhack.dll");
   if (dllPath.empty() ||
       GetFileAttributesW(dllPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
     std::wcerr
