@@ -2,6 +2,7 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <cwctype>
 #include <iostream>
 #include <map>
 #include <string>
@@ -9,10 +10,10 @@
 #include <unordered_map>
 #include <vector>
 
-
 #include "ftxui/dom/elements.hpp"
 
 #include "ftxui/component/component.hpp"
+#include "ftxui/component/event.hpp"
 #include "ftxui/component/screen_interactive.hpp"
 
 // --- 数据结构 ---
@@ -27,7 +28,7 @@ const wchar_t *MAPPING_NAME = L"GlobalAudioSpeedControl";
 HANDLE hMapFile = NULL;
 float *pSharedSpeed = NULL;
 
-bool CreateSharedMemory() { /* ... 与之前版本完全相同 ... */
+bool CreateSharedMemory() {
   hMapFile = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
                                 sizeof(float), MAPPING_NAME);
   if (hMapFile == NULL) {
@@ -46,13 +47,13 @@ bool CreateSharedMemory() { /* ... 与之前版本完全相同 ... */
   }
   return true;
 }
-void SetSpeed(float speed) { /* ... 与之前版本完全相同 ... */
+void SetSpeed(float speed) {
   if (pSharedSpeed) {
     *pSharedSpeed = speed;
     std::wcout << L"Speed set to: " << speed << std::endl;
   }
 }
-void CleanupSharedMemory() { /* ... 与之前版本完全相同 ... */
+void CleanupSharedMemory() {
   if (pSharedSpeed) {
     UnmapViewOfFile(pSharedSpeed);
     pSharedSpeed = NULL;
@@ -64,8 +65,7 @@ void CleanupSharedMemory() { /* ... 与之前版本完全相同 ... */
 }
 
 // --- 注入逻辑 (注入单个进程) ---
-bool InjectDll(DWORD processId,
-               const std::wstring &dllPath) { /* ... 与之前版本完全相同 ... */
+bool InjectDll(DWORD processId, const std::wstring &dllPath) {
   HANDLE hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_VM_OPERATION |
                                     PROCESS_VM_WRITE | PROCESS_VM_READ,
                                 FALSE, processId);
@@ -207,100 +207,173 @@ std::wstring GetDllPath() {
   return L"";
 }
 
+// --- 过滤逻辑函数 ---
+// Helper to convert wstring to lowercase
+std::wstring to_lower(std::wstring s) {
+  std::transform(s.begin(), s.end(), s.begin(), ::towlower);
+  return s;
+}
+
+void ApplyFilter(
+    const std::map<std::wstring, std::vector<ProcessInfo>> &all_groups,
+    const std::wstring &filter,
+    // Output parameters:
+    std::vector<std::wstring> &filtered_menu_entries,
+    std::vector<std::wstring> &filtered_process_names, int &selected_entry) {
+  filtered_menu_entries.clear();
+  filtered_process_names.clear();
+  std::wstring lower_filter = to_lower(filter);
+
+  for (const auto &pair : all_groups) {
+    const std::wstring &name = pair.first;
+    const std::vector<ProcessInfo> &instances = pair.second;
+
+    bool name_matches = to_lower(name).find(lower_filter) != std::wstring::npos;
+    bool pid_matches = false;
+
+    // Also check if any PID in the group matches the filter
+    if (!name_matches) {
+      for (const auto &proc_info : instances) {
+        if (std::to_wstring(proc_info.pid).find(filter) != std::wstring::npos) {
+          pid_matches = true;
+          break;
+        }
+      }
+    }
+
+    if (name_matches || pid_matches) {
+      filtered_menu_entries.push_back(
+          name + L" (" + std::to_wstring(instances.size()) + L" instances)");
+      filtered_process_names.push_back(name);
+    }
+  }
+
+  // Clamp selected entry to be within bounds
+  if (selected_entry >= (int)filtered_menu_entries.size()) {
+    selected_entry = (int)filtered_menu_entries.size() - 1;
+  }
+  if (selected_entry < 0) {
+    selected_entry = 0;
+  }
+}
 int main(int argc, char *argv[]) {
   std::wcin.imbue(std::locale(""));
   std::wcout.imbue(std::locale(""));
 
-  // 1. 获取并检查 DLL 路径
+  // 1. 获取 DLL 路径
   std::wstring dllPath = GetDllPath();
   if (dllPath.empty() ||
       GetFileAttributesW(dllPath.c_str()) == INVALID_FILE_ATTRIBUTES) {
-    std::wcerr << L"Error: audiospeedhack.dll not found in the same directory "
-                  L"as the injector!"
-               << std::endl;
+    std::wcerr << L"Error: audiospeedhack.dll not found!" << std::endl;
     system("pause");
     return 1;
   }
   std::wcout << L"Using DLL: " << dllPath << std::endl;
 
-  // 2. 获取所有进程和根进程
+  // 2. 获取并分组进程
   std::unordered_map<DWORD, ProcessInfo> all_processes;
   std::vector<ProcessInfo> root_processes = GetRootProcesses(all_processes);
-  if (root_processes.empty()) {
-    std::wcerr << L"Could not find any running processes." << std::endl;
-    system("pause");
-    return 1;
-  }
-
-  // 3. *** 新逻辑：按进程名称对根进程进行分组 ***
   std::map<std::wstring, std::vector<ProcessInfo>> grouped_processes;
   for (const auto &proc : root_processes) {
     grouped_processes[proc.name].push_back(proc);
   }
 
-  // 4. *** TUI 选择进程 (基于分组后的名称) ***
-  std::wstring selected_process_name;
+  // 3. *** TUI 状态管理 ***
+  std::wstring filter_string;
+  std::vector<std::wstring> filtered_menu_entries;
+  std::vector<std::wstring> filtered_process_names;
   int selected_entry = 0;
-  std::vector<std::wstring> menu_entries;
-  std::vector<std::wstring> process_names; // 用于通过索引查找名称
+  std::wstring selected_process_name;
 
-  for (const auto &pair : grouped_processes) {
-    // TUI 菜单项显示为 "进程名 (实例数)"
-    menu_entries.push_back(pair.first + L" (" +
-                           std::to_wstring(pair.second.size()) +
-                           L" instances)");
-    process_names.push_back(pair.first);
-  }
+  // 初始化显示列表
+  ApplyFilter(grouped_processes, filter_string, filtered_menu_entries,
+              filtered_process_names, selected_entry);
 
   auto screen = ftxui::ScreenInteractive::TerminalOutput();
 
+  // 4. *** 创建带事件拦截的 TUI 组件 ***
   ftxui::MenuOption option;
   option.on_enter = [&] {
-    if (!process_names.empty()) {
-      selected_process_name = process_names[selected_entry];
+    if (selected_entry >= 0 && selected_entry < filtered_process_names.size()) {
+      selected_process_name = filtered_process_names[selected_entry];
       screen.Exit();
     }
   };
 
-  auto menu = ftxui::Menu(&menu_entries, &selected_entry, option);
-  auto renderer = ftxui::Renderer(menu, [&] {
+  // Menu现在使用动态的 filtered_menu_entries
+  auto menu = ftxui::Menu(&filtered_menu_entries, &selected_entry, option);
+
+  // 使用 CatchEvent 包装 Menu 来处理自定义输入
+  auto component = ftxui::CatchEvent(menu, [&](ftxui::Event event) {
+    if (event.is_character()) {
+      wchar_t ch = event.character()[0];
+      if (std::iswalnum(ch) || ch == L'-' || ch == L'_' || ch == L'.') {
+        filter_string += ch;
+        ApplyFilter(grouped_processes, filter_string, filtered_menu_entries,
+                    filtered_process_names, selected_entry);
+        return true; // Event handled
+      }
+    }
+    if (event == ftxui::Event::Backspace) {
+      if (!filter_string.empty()) {
+        filter_string.pop_back();
+        ApplyFilter(grouped_processes, filter_string, filtered_menu_entries,
+                    filtered_process_names, selected_entry);
+      }
+      return true; // Event handled
+    }
+    if (event == ftxui::Event::Escape) {
+      if (!filter_string.empty()) {
+        filter_string.clear();
+        ApplyFilter(grouped_processes, filter_string, filtered_menu_entries,
+                    filtered_process_names, selected_entry);
+      } else {
+        // If filter is already empty, Esc exits the program
+        screen.Exit();
+      }
+      return true; // Event handled
+    }
+    return false; // Event not handled, pass to Menu
+  });
+
+  // 5. *** 创建渲染器以显示所有 TUI 元素 ***
+  auto renderer = ftxui::Renderer(component, [&] {
     return ftxui::vbox(
-               {ftxui::text(
-                    L"Select a process group to inject (Use ↑/↓ and Enter):") |
+               {ftxui::text(L"Select a process group (Use ↑/↓ and Enter):") |
                     ftxui::bold,
+                ftxui::hbox(
+                    {ftxui::text(L"Filter: "),
+                     ftxui::text(filter_string) |
+                         ftxui::inverted, // Inverted style for the input text
+                     ftxui::text(L"  (Type to search, Backspace to delete, Esc "
+                                 L"to clear/exit)")}),
                 ftxui::separator(),
-                menu->Render() | ftxui::vscroll_indicator | ftxui::frame |
+                component->Render() | ftxui::vscroll_indicator | ftxui::frame |
                     ftxui::size(ftxui::HEIGHT, ftxui::LESS_THAN, 20)}) |
            ftxui::border;
   });
 
   screen.Loop(renderer);
 
+  // 6. 后续注入逻辑
   if (selected_process_name.empty()) {
     std::wcout << L"No process selected. Exiting." << std::endl;
     return 0;
   }
 
-  // 5. 创建共享内存
   if (!CreateSharedMemory()) {
     system("pause");
     return 1;
   }
 
-  // 6. *** 新逻辑：注入所有同名的根进程及其子进程 ***
   std::wcout << L"\nInjecting into all processes named '"
              << selected_process_name << L"' and their children..."
-             << std::endl;
-  std::wcout << L"--------------------------------------------------"
              << std::endl;
   const auto &roots_to_inject = grouped_processes[selected_process_name];
   for (const auto &root_proc : roots_to_inject) {
     std::wcout << L"--- Starting injection for root PID: " << root_proc.pid
                << L" ---" << std::endl;
     InjectIntoProcessAndChildren(root_proc.pid, dllPath, all_processes);
-    std::wcout << L"--- Finished injection for root PID: " << root_proc.pid
-               << L" ---\n"
-               << std::endl;
   }
 
   // 7. 循环设置速度
@@ -308,7 +381,6 @@ int main(int argc, char *argv[]) {
              << std::endl;
   float currentSpeed = 1.0f;
   SetSpeed(currentSpeed);
-
   std::string input;
   while (true) {
     std::wcout << L"> ";
