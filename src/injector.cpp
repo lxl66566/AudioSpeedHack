@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cwctype>
 #include <iostream>
+#include <locale> // For std::locale
 #include <map>
 #include <string>
 #include <tlhelp32.h>
@@ -149,12 +150,6 @@ GetRootProcesses(std::unordered_map<DWORD, ProcessInfo> &all_processes) {
     }
   }
 
-  // 按名称排序
-  std::sort(root_processes.begin(), root_processes.end(),
-            [](const ProcessInfo &a, const ProcessInfo &b) {
-              return a.name < b.name;
-            });
-
   return root_processes;
 }
 
@@ -214,6 +209,16 @@ std::wstring to_lower(std::wstring s) {
   return s;
 }
 
+// Helper function to check if a wstring contains only ASCII characters
+bool is_ascii(const std::wstring &s) {
+  for (wchar_t c : s) {
+    if (c > 127) { // ASCII characters are 0-127
+      return false;
+    }
+  }
+  return true;
+}
+
 void ApplyFilter(
     const std::map<std::wstring, std::vector<ProcessInfo>> &all_groups,
     const std::wstring &filter,
@@ -223,6 +228,10 @@ void ApplyFilter(
   filtered_menu_entries.clear();
   filtered_process_names.clear();
   std::wstring lower_filter = to_lower(filter);
+
+  // Temporary storage to hold pairs of (process_name, menu_entry) before final
+  // sort
+  std::vector<std::pair<std::wstring, std::wstring>> temp_filtered_results;
 
   for (const auto &pair : all_groups) {
     const std::wstring &name = pair.first;
@@ -242,10 +251,33 @@ void ApplyFilter(
     }
 
     if (name_matches || pid_matches) {
-      filtered_menu_entries.push_back(
-          name + L" (" + std::to_wstring(instances.size()) + L" instances)");
-      filtered_process_names.push_back(name);
+      temp_filtered_results.push_back(
+          {name,
+           name + L" (" + std::to_wstring(instances.size()) + L" instances)"});
     }
+  }
+
+  // Apply the custom sorting logic to temp_filtered_results
+  std::sort(temp_filtered_results.begin(), temp_filtered_results.end(),
+            [](const std::pair<std::wstring, std::wstring> &a,
+               const std::pair<std::wstring, std::wstring> &b) {
+              bool a_is_ascii = is_ascii(a.first);
+              bool b_is_ascii = is_ascii(b.first);
+
+              if (!a_is_ascii && b_is_ascii) {
+                return true; // a (non-ASCII) comes before b (ASCII)
+              }
+              if (a_is_ascii && !b_is_ascii) {
+                return false; // b (non-ASCII) comes before a (ASCII)
+              }
+              // If both are ASCII or both are non-ASCII, sort alphabetically
+              return a.first < b.first;
+            });
+
+  // Populate the output vectors from the sorted temporary results
+  for (const auto &item : temp_filtered_results) {
+    filtered_process_names.push_back(item.first);
+    filtered_menu_entries.push_back(item.second);
   }
 
   // Clamp selected entry to be within bounds
