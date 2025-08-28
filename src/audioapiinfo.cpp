@@ -350,8 +350,8 @@ HRESULT STDMETHODCALLTYPE Hook_IDirectSound_CreateSoundBuffer(
   if (SUCCEEDED(hr) && ppDSBuffer && *ppDSBuffer) {
     void **vtable = *(void ***)*ppDSBuffer;
     if (Real_IDirectSoundBuffer_Lock == nullptr) {
-      Real_IDirectSoundBuffer_Lock = (PFN_IDirectSoundBuffer_Lock)vtable[10];
-      Real_IDirectSoundBuffer_Play = (PFN_IDirectSoundBuffer_Play)vtable[11];
+      Real_IDirectSoundBuffer_Lock = (PFN_IDirectSoundBuffer_Lock)vtable[11];
+      Real_IDirectSoundBuffer_Play = (PFN_IDirectSoundBuffer_Play)vtable[12];
       DetourTransactionBegin();
       DetourUpdateThread(GetCurrentThread());
       DetourAttach(&(PVOID &)Real_IDirectSoundBuffer_Lock,

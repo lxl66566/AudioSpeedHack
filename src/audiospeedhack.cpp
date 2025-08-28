@@ -493,7 +493,7 @@ Hook_IDirectSoundBuffer8_Play(IDirectSoundBuffer8 *pThis, DWORD dwReserved1,
 
   void **vtable = *(void ***)pThis;
   PFN_IDirectSoundBuffer8_Play pfnOriginalPlay =
-      (PFN_IDirectSoundBuffer8_Play)vtable[11];
+      (PFN_IDirectSoundBuffer8_Play)vtable[12];
   return pfnOriginalPlay(pThis, dwReserved1, dwPriority, dwFlags);
 }
 
@@ -509,7 +509,7 @@ Hook_IDirectSoundBuffer8_Stop(IDirectSoundBuffer8 *pThis) {
 
   void **vtable = *(void ***)pThis;
   PFN_IDirectSoundBuffer8_Stop pfnOriginalStop =
-      (PFN_IDirectSoundBuffer8_Stop)vtable[16];
+      (PFN_IDirectSoundBuffer8_Stop)vtable[19];
   return pfnOriginalStop(pThis);
 }
 
@@ -590,10 +590,10 @@ HRESULT STDMETHODCALLTYPE Hook_IDirectSound8_CreateSoundBuffer(
           state.st->setChannels(wfx.nChannels);
 
           void **vtable = *(void ***)pDSB8;
-          state.pfnLock = (PFN_IDirectSoundBuffer8_Lock)vtable[10];
-          state.pfnUnlock = (PFN_IDirectSoundBuffer8_Unlock)vtable[18];
-          state.pfnPlay = (PFN_IDirectSoundBuffer8_Play)vtable[11];
-          state.pfnStop = (PFN_IDirectSoundBuffer8_Stop)vtable[16];
+          state.pfnLock = (PFN_IDirectSoundBuffer8_Lock)vtable[11];
+          state.pfnUnlock = (PFN_IDirectSoundBuffer8_Unlock)vtable[20];
+          state.pfnPlay = (PFN_IDirectSoundBuffer8_Play)vtable[12];
+          state.pfnStop = (PFN_IDirectSoundBuffer8_Stop)vtable[19];
           state.pfnRelease = (PFN_IDirectSoundBuffer8_Release)vtable[2];
 
           DetourTransactionBegin();
