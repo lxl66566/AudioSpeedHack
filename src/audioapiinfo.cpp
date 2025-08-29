@@ -1,10 +1,9 @@
 // This file is a debug utility for hooking audio APIs and logging their
-// invocations.
+// invocations using manual VTable patching.
 #include <windows.h>
 
 #include <audioclient.h>
 #include <audiopolicy.h>
-#include <detours.h>
 #include <dsound.h>
 #include <initguid.h>
 #include <mmdeviceapi.h>
@@ -12,9 +11,11 @@
 #include <xaudio2.h>
 
 #include <map>
+#include <memory> // For std::unique_ptr
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <vector>
 
 // Helper function to format output strings
 template <typename... Args>
@@ -34,42 +35,73 @@ std::string format_string(const std::string &format, Args... args) {
 void Log(const char *message) { OutputDebugStringA(message); }
 
 // ===================================================================================
+// Manual VTable Hooking Utilities
+// ===================================================================================
+
+// Patches a VTable entry.
+void VTableHook(void **vtable, int index, void *hookFunc, void **originalFunc) {
+  if (!vtable || !hookFunc || !originalFunc)
+    return;
+
+  // Store the original function pointer if it hasn't been stored yet.
+  if (*originalFunc == nullptr) {
+    *originalFunc = vtable[index];
+  }
+
+  // Change memory protection to allow writing.
+  DWORD oldProtect;
+  if (VirtualProtect(&vtable[index], sizeof(void *), PAGE_READWRITE,
+                     &oldProtect)) {
+    vtable[index] = hookFunc;
+    // Restore original memory protection.
+    VirtualProtect(&vtable[index], sizeof(void *), oldProtect, &oldProtect);
+  } else {
+    Log("VTableHook: VirtualProtect failed!");
+  }
+}
+
+// Restores a VTable entry.
+void VTableUnhook(void **vtable, int index, void *originalFunc) {
+  if (!vtable || !originalFunc)
+    return;
+
+  DWORD oldProtect;
+  if (VirtualProtect(&vtable[index], sizeof(void *), PAGE_READWRITE,
+                     &oldProtect)) {
+    vtable[index] = originalFunc;
+    VirtualProtect(&vtable[index], sizeof(void *), oldProtect, &oldProtect);
+  }
+}
+
+// ===================================================================================
 // 1. Core Audio (WASAPI) Hooks
 // ===================================================================================
 
-// --- Function Pointer Definitions ---
-typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioClient_Initialize)(
-    IAudioClient *pThis, AUDCLNT_SHAREMODE ShareMode, DWORD StreamFlags,
-    REFERENCE_TIME hnsBufferDuration, REFERENCE_TIME hnsPeriodicity,
-    const WAVEFORMATEX *pFormat, LPCGUID AudioSessionGuid);
-typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioClient_GetService)(
-    IAudioClient *pThis, REFIID riid, void **ppv);
-typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioRenderClient_GetBuffer)(
-    IAudioRenderClient *pThis, UINT32 NumFramesRequested, BYTE **ppData);
-typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioRenderClient_ReleaseBuffer)(
-    IAudioRenderClient *pThis, UINT32 NumFramesWritten, DWORD dwFlags);
-typedef HRESULT(STDMETHODCALLTYPE *PFN_IMMDevice_Activate)(
-    IMMDevice *pThis, REFIID iid, DWORD dwClsCtx,
-    PROPVARIANT *pActivationParams, void **ppInterface);
+// // --- Function Pointer Definitions ---
+// typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioClient_Initialize)(
+//     IAudioClient *pThis, AUDCLNT_SHAREMODE ShareMode, DWORD StreamFlags,
+//     REFERENCE_TIME hnsBufferDuration, REFERENCE_TIME hnsPeriodicity,
+//     const WAVEFORMATEX *pFormat, LPCGUID AudioSessionGuid);
+// typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioClient_GetService)(
+//     IAudioClient *pThis, REFIID riid, void **ppv);
+// typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioRenderClient_GetBuffer)(
+//     IAudioRenderClient *pThis, UINT32 NumFramesRequested, BYTE **ppData);
+// typedef HRESULT(STDMETHODCALLTYPE *PFN_IAudioRenderClient_ReleaseBuffer)(
+//     IAudioRenderClient *pThis, UINT32 NumFramesWritten, DWORD dwFlags);
+// typedef HRESULT(STDMETHODCALLTYPE *PFN_IMMDevice_Activate)(
+//     IMMDevice *pThis, REFIID iid, DWORD dwClsCtx,
+//     PROPVARIANT *pActivationParams, void **ppInterface);
 
-// --- Original Function Pointers ---
-static PFN_IAudioClient_Initialize Real_IAudioClient_Initialize = nullptr;
-static PFN_IAudioClient_GetService Real_IAudioClient_GetService = nullptr;
-static PFN_IAudioRenderClient_GetBuffer Real_IAudioRenderClient_GetBuffer =
-    nullptr;
-static PFN_IAudioRenderClient_ReleaseBuffer
-    Real_IAudioRenderClient_ReleaseBuffer = nullptr;
-static PFN_IMMDevice_Activate Real_IMMDevice_Activate = nullptr;
+// // --- Original Function Pointers ---
+// static PFN_IAudioClient_Initialize Real_IAudioClient_Initialize = nullptr;
+// static PFN_IAudioClient_GetService Real_IAudioClient_GetService = nullptr;
+// static PFN_IAudioRenderClient_GetBuffer Real_IAudioRenderClient_GetBuffer =
+//     nullptr;
+// static PFN_IAudioRenderClient_ReleaseBuffer
+//     Real_IAudioRenderClient_ReleaseBuffer = nullptr;
+// static PFN_IMMDevice_Activate Real_IMMDevice_Activate = nullptr;
 
-// --- Global State for WASAPI ---
-static std::mutex g_wasapiMutex;
-// Maps an IAudioRenderClient to its original GetBuffer/ReleaseBuffer functions
-static std::map<IAudioRenderClient *, PFN_IAudioRenderClient_GetBuffer>
-    g_renderClientGetBufferMap;
-static std::map<IAudioRenderClient *, PFN_IAudioRenderClient_ReleaseBuffer>
-    g_renderClientReleaseBufferMap;
-
-// --- Hooked Functions ---
+// // --- Hooked Functions ---
 
 // HRESULT STDMETHODCALLTYPE Hook_IAudioRenderClient_ReleaseBuffer(
 //     IAudioRenderClient *pThis, UINT32 NumFramesWritten, DWORD dwFlags) {
@@ -77,13 +109,6 @@ static std::map<IAudioRenderClient *, PFN_IAudioRenderClient_ReleaseBuffer>
 //                     "NumFramesWritten: %u, Flags: 0x%X",
 //                     NumFramesWritten, dwFlags)
 //           .c_str());
-
-//   std::lock_guard<std::mutex> lock(g_wasapiMutex);
-//   auto it = g_renderClientReleaseBufferMap.find(pThis);
-//   if (it != g_renderClientReleaseBufferMap.end()) {
-//     return it->second(pThis, NumFramesWritten, dwFlags);
-//   }
-//   // Fallback in case something went wrong
 //   return Real_IAudioRenderClient_ReleaseBuffer(pThis, NumFramesWritten,
 //                                                dwFlags);
 // }
@@ -94,13 +119,6 @@ static std::map<IAudioRenderClient *, PFN_IAudioRenderClient_ReleaseBuffer>
 //           "[WASAPI] IAudioRenderClient::GetBuffer -> NumFramesRequested: %u",
 //           NumFramesRequested)
 //           .c_str());
-
-//   std::lock_guard<std::mutex> lock(g_wasapiMutex);
-//   auto it = g_renderClientGetBufferMap.find(pThis);
-//   if (it != g_renderClientGetBufferMap.end()) {
-//     return it->second(pThis, NumFramesRequested, ppData);
-//   }
-//   // Fallback
 //   return Real_IAudioRenderClient_GetBuffer(pThis, NumFramesRequested,
 //   ppData);
 // }
@@ -114,31 +132,20 @@ static std::map<IAudioRenderClient *, PFN_IAudioRenderClient_ReleaseBuffer>
 
 //   HRESULT hr = Real_IAudioClient_GetService(pThis, riid, ppv);
 
-//   if (SUCCEEDED(hr) && riid == IID_IAudioRenderClient) {
+//   if (SUCCEEDED(hr) && riid == IID_IAudioRenderClient && *ppv) {
 //     Log("[WASAPI] IAudioClient::GetService -> IID_IAudioRenderClient
 //     obtained. "
 //         "Hooking its methods.");
 //     IAudioRenderClient *pRenderClient = static_cast<IAudioRenderClient
-//     *>(*ppv);
+//     *>(*ppv); void **vtable = *(void ***)pRenderClient;
 
-//     void **vtable = *(void ***)pRenderClient;
-//     PFN_IAudioRenderClient_GetBuffer pfnGetBuffer =
-//         (PFN_IAudioRenderClient_GetBuffer)vtable[3];
-//     PFN_IAudioRenderClient_ReleaseBuffer pfnReleaseBuffer =
-//         (PFN_IAudioRenderClient_ReleaseBuffer)vtable[4];
-
-//     {
-//       std::lock_guard<std::mutex> lock(g_wasapiMutex);
-//       g_renderClientGetBufferMap[pRenderClient] = pfnGetBuffer;
-//       g_renderClientReleaseBufferMap[pRenderClient] = pfnReleaseBuffer;
+//     // Hook the VTable only once
+//     if (Real_IAudioRenderClient_GetBuffer == nullptr) {
+//       VTableHook(vtable, 3, (void *)Hook_IAudioRenderClient_GetBuffer,
+//                  (void **)&Real_IAudioRenderClient_GetBuffer);
+//       VTableHook(vtable, 4, (void *)Hook_IAudioRenderClient_ReleaseBuffer,
+//                  (void **)&Real_IAudioRenderClient_ReleaseBuffer);
 //     }
-
-//     DetourTransactionBegin();
-//     DetourUpdateThread(GetCurrentThread());
-//     DetourAttach(&(PVOID &)pfnGetBuffer, Hook_IAudioRenderClient_GetBuffer);
-//     DetourAttach(&(PVOID &)pfnReleaseBuffer,
-//                  Hook_IAudioRenderClient_ReleaseBuffer);
-//     DetourTransactionCommit();
 //   }
 //   return hr;
 // }
@@ -171,22 +178,19 @@ static std::map<IAudioRenderClient *, PFN_IAudioRenderClient_ReleaseBuffer>
 //   pActivationParams,
 //                                        ppInterface);
 
-//   if (SUCCEEDED(hr) && iid == IID_IAudioClient) {
+//   if (SUCCEEDED(hr) && iid == IID_IAudioClient && *ppInterface) {
 //     Log("[WASAPI] IMMDevice::Activate -> IID_IAudioClient obtained. Hooking "
 //         "its methods.");
 //     IAudioClient *pAudioClient = static_cast<IAudioClient *>(*ppInterface);
-
 //     void **vtable = *(void ***)pAudioClient;
-//     Real_IAudioClient_Initialize = (PFN_IAudioClient_Initialize)vtable[3];
-//     Real_IAudioClient_GetService = (PFN_IAudioClient_GetService)vtable[8];
 
-//     DetourTransactionBegin();
-//     DetourUpdateThread(GetCurrentThread());
-//     DetourAttach(&(PVOID &)Real_IAudioClient_Initialize,
-//                  Hook_IAudioClient_Initialize);
-//     DetourAttach(&(PVOID &)Real_IAudioClient_GetService,
-//                  Hook_IAudioClient_GetService);
-//     DetourTransactionCommit();
+//     // Hook the VTable only once
+//     if (Real_IAudioClient_Initialize == nullptr) {
+//       VTableHook(vtable, 3, (void *)Hook_IAudioClient_Initialize,
+//                  (void **)&Real_IAudioClient_Initialize);
+//       VTableHook(vtable, 8, (void *)Hook_IAudioClient_GetService,
+//                  (void **)&Real_IAudioClient_GetService);
+//     }
 //   }
 //   return hr;
 // }
@@ -195,7 +199,6 @@ static std::map<IAudioRenderClient *, PFN_IAudioRenderClient_ReleaseBuffer>
 // 2. XAudio2 Hooks (Logging Only)
 // ===================================================================================
 
-// --- Function Pointer Definitions ---
 typedef HRESULT(STDMETHODCALLTYPE *PFN_IXAudio2SourceVoice_SubmitSourceBuffer)(
     IXAudio2SourceVoice *pThis, const XAUDIO2_BUFFER *pBuffer,
     const XAUDIO2_BUFFER_WMA *pBufferWma);
@@ -207,13 +210,11 @@ typedef HRESULT(STDMETHODCALLTYPE *PFN_IXAudio2_CreateSourceVoice)(
 typedef HRESULT(WINAPI *PFN_XAudio2Create)(IXAudio2 **ppXAudio2, UINT32 Flags,
                                            XAUDIO2_PROCESSOR XAudio2Processor);
 
-// --- Original Function Pointers ---
 static PFN_XAudio2Create Real_XAudio2Create = nullptr;
 static PFN_IXAudio2_CreateSourceVoice Real_IXAudio2_CreateSourceVoice = nullptr;
 static PFN_IXAudio2SourceVoice_SubmitSourceBuffer
     Real_IXAudio2SourceVoice_SubmitSourceBuffer = nullptr;
 
-// --- Hooked Functions ---
 HRESULT STDMETHODCALLTYPE Hook_IXAudio2SourceVoice_SubmitSourceBuffer(
     IXAudio2SourceVoice *pThis, const XAUDIO2_BUFFER *pBuffer,
     const XAUDIO2_BUFFER_WMA *pBufferWma) {
@@ -223,7 +224,6 @@ HRESULT STDMETHODCALLTYPE Hook_IXAudio2SourceVoice_SubmitSourceBuffer(
                     pBuffer ? pBuffer->Flags : 0,
                     pBuffer ? pBuffer->LoopCount : 0)
           .c_str());
-
   return Real_IXAudio2SourceVoice_SubmitSourceBuffer(pThis, pBuffer,
                                                      pBufferWma);
 }
@@ -239,22 +239,15 @@ HRESULT STDMETHODCALLTYPE Hook_IXAudio2_CreateSourceVoice(
                     pSourceFormat ? pSourceFormat->nChannels : 0,
                     pSourceFormat ? pSourceFormat->wBitsPerSample : 0)
           .c_str());
-
   HRESULT hr = Real_IXAudio2_CreateSourceVoice(
       pThis, ppSourceVoice, pSourceFormat, Flags, MaxFrequencyRatio, pCallback,
       pSendList, pEffectChain);
 
   if (SUCCEEDED(hr) && ppSourceVoice && *ppSourceVoice) {
     void **vtable = *(void ***)*ppSourceVoice;
-    // Hook SubmitSourceBuffer for this specific voice instance
     if (Real_IXAudio2SourceVoice_SubmitSourceBuffer == nullptr) {
-      Real_IXAudio2SourceVoice_SubmitSourceBuffer =
-          (PFN_IXAudio2SourceVoice_SubmitSourceBuffer)vtable[9];
-      DetourTransactionBegin();
-      DetourUpdateThread(GetCurrentThread());
-      DetourAttach(&(PVOID &)Real_IXAudio2SourceVoice_SubmitSourceBuffer,
-                   Hook_IXAudio2SourceVoice_SubmitSourceBuffer);
-      DetourTransactionCommit();
+      VTableHook(vtable, 9, (void *)Hook_IXAudio2SourceVoice_SubmitSourceBuffer,
+                 (void **)&Real_IXAudio2SourceVoice_SubmitSourceBuffer);
     }
   }
   return hr;
@@ -267,13 +260,8 @@ HRESULT WINAPI Hook_XAudio2Create(IXAudio2 **ppXAudio2, UINT32 Flags,
   if (SUCCEEDED(hr) && ppXAudio2 && *ppXAudio2) {
     void **vtable = *(void ***)*ppXAudio2;
     if (Real_IXAudio2_CreateSourceVoice == nullptr) {
-      Real_IXAudio2_CreateSourceVoice =
-          (PFN_IXAudio2_CreateSourceVoice)vtable[3];
-      DetourTransactionBegin();
-      DetourUpdateThread(GetCurrentThread());
-      DetourAttach(&(PVOID &)Real_IXAudio2_CreateSourceVoice,
-                   Hook_IXAudio2_CreateSourceVoice);
-      DetourTransactionCommit();
+      VTableHook(vtable, 3, (void *)Hook_IXAudio2_CreateSourceVoice,
+                 (void **)&Real_IXAudio2_CreateSourceVoice);
     }
   }
   return hr;
@@ -283,7 +271,6 @@ HRESULT WINAPI Hook_XAudio2Create(IXAudio2 **ppXAudio2, UINT32 Flags,
 // 3. DirectSound Hooks (Logging Only)
 // ===================================================================================
 
-// --- Function Pointer Definitions ---
 typedef HRESULT(STDMETHODCALLTYPE *PFN_IDirectSoundBuffer_Lock)(
     IDirectSoundBuffer *pThis, DWORD dwOffset, DWORD dwBytes,
     LPVOID *ppvAudioPtr1, LPDWORD pdwAudioBytes1, LPVOID *ppvAudioPtr2,
@@ -301,7 +288,6 @@ typedef HRESULT(WINAPI *PFN_DirectSoundCreate8)(LPCGUID pcGuidDevice,
                                                 LPDIRECTSOUND8 *ppDS8,
                                                 LPUNKNOWN pUnkOuter);
 
-// --- Original Function Pointers ---
 static PFN_DirectSoundCreate Real_DirectSoundCreate = nullptr;
 static PFN_DirectSoundCreate8 Real_DirectSoundCreate8 = nullptr;
 static PFN_IDirectSound_CreateSoundBuffer Real_IDirectSound_CreateSoundBuffer =
@@ -309,7 +295,6 @@ static PFN_IDirectSound_CreateSoundBuffer Real_IDirectSound_CreateSoundBuffer =
 static PFN_IDirectSoundBuffer_Lock Real_IDirectSoundBuffer_Lock = nullptr;
 static PFN_IDirectSoundBuffer_Play Real_IDirectSoundBuffer_Play = nullptr;
 
-// --- Hooked Functions ---
 HRESULT STDMETHODCALLTYPE
 Hook_IDirectSoundBuffer_Play(IDirectSoundBuffer *pThis, DWORD dwReserved1,
                              DWORD dwPriority, DWORD dwFlags) {
@@ -350,15 +335,10 @@ HRESULT STDMETHODCALLTYPE Hook_IDirectSound_CreateSoundBuffer(
   if (SUCCEEDED(hr) && ppDSBuffer && *ppDSBuffer) {
     void **vtable = *(void ***)*ppDSBuffer;
     if (Real_IDirectSoundBuffer_Lock == nullptr) {
-      Real_IDirectSoundBuffer_Lock = (PFN_IDirectSoundBuffer_Lock)vtable[11];
-      Real_IDirectSoundBuffer_Play = (PFN_IDirectSoundBuffer_Play)vtable[12];
-      DetourTransactionBegin();
-      DetourUpdateThread(GetCurrentThread());
-      DetourAttach(&(PVOID &)Real_IDirectSoundBuffer_Lock,
-                   Hook_IDirectSoundBuffer_Lock);
-      DetourAttach(&(PVOID &)Real_IDirectSoundBuffer_Play,
-                   Hook_IDirectSoundBuffer_Play);
-      DetourTransactionCommit();
+      VTableHook(vtable, 11, (void *)Hook_IDirectSoundBuffer_Lock,
+                 (void **)&Real_IDirectSoundBuffer_Lock);
+      VTableHook(vtable, 12, (void *)Hook_IDirectSoundBuffer_Play,
+                 (void **)&Real_IDirectSoundBuffer_Play);
     }
   }
   return hr;
@@ -367,13 +347,8 @@ HRESULT STDMETHODCALLTYPE Hook_IDirectSound_CreateSoundBuffer(
 void AttachToDirectSound(IUnknown *pDS) {
   void **vtable = *(void ***)pDS;
   if (Real_IDirectSound_CreateSoundBuffer == nullptr) {
-    Real_IDirectSound_CreateSoundBuffer =
-        (PFN_IDirectSound_CreateSoundBuffer)vtable[3];
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID &)Real_IDirectSound_CreateSoundBuffer,
-                 Hook_IDirectSound_CreateSoundBuffer);
-    DetourTransactionCommit();
+    VTableHook(vtable, 3, (void *)Hook_IDirectSound_CreateSoundBuffer,
+               (void **)&Real_IDirectSound_CreateSoundBuffer);
   }
 }
 
@@ -399,8 +374,51 @@ HRESULT WINAPI Hook_DirectSoundCreate8(LPCGUID pcGuidDevice,
 }
 
 // ===================================================================================
-// 4. Legacy waveOut Hooks
+// 4. Legacy waveOut & PlaySound Hooks (via simple function pointer replacement)
 // ===================================================================================
+
+// For exported functions, we will use a simple inline hook (memory patch).
+// This map stores original bytes for unhooking.
+static std::map<void *, std::vector<BYTE>> g_inlineHooks;
+
+void InlineHook(void *target, void *hook, void **original) {
+  if (!target || !hook || !original)
+    return;
+
+  *original = target; // The "real" function is just the original address.
+
+  DWORD oldProtect;
+  if (VirtualProtect(target, 5, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+    // Save original bytes
+    std::vector<BYTE> originalBytes(5);
+    memcpy(originalBytes.data(), target, 5);
+    g_inlineHooks[target] = originalBytes;
+
+    // Write jmp instruction (E9) + relative offset
+    BYTE jmp[5];
+    jmp[0] = 0xE9;
+    DWORD relativeOffset = (DWORD)hook - (DWORD)target - 5;
+    memcpy(&jmp[1], &relativeOffset, 4);
+
+    memcpy(target, jmp, 5);
+
+    VirtualProtect(target, 5, oldProtect, &oldProtect);
+  } else {
+    Log("InlineHook: VirtualProtect failed!");
+  }
+}
+
+void InlineUnhook(void *target) {
+  if (g_inlineHooks.find(target) == g_inlineHooks.end())
+    return;
+
+  DWORD oldProtect;
+  if (VirtualProtect(target, 5, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+    memcpy(target, g_inlineHooks[target].data(), 5);
+    VirtualProtect(target, 5, oldProtect, &oldProtect);
+    g_inlineHooks.erase(target);
+  }
+}
 
 // --- Function Pointer Definitions ---
 typedef MMRESULT(WINAPI *PFN_waveOutOpen)(LPHWAVEOUT phwo, UINT uDeviceID,
@@ -411,12 +429,18 @@ typedef MMRESULT(WINAPI *PFN_waveOutClose)(HWAVEOUT hwo);
 typedef MMRESULT(WINAPI *PFN_waveOutWrite)(HWAVEOUT hwo, LPWAVEHDR pwh,
                                            UINT cbwh);
 typedef MMRESULT(WINAPI *PFN_waveOutReset)(HWAVEOUT hwo);
+typedef BOOL(WINAPI *PFN_PlaySoundA)(LPCSTR pszSound, HMODULE hmod,
+                                     DWORD fdwSound);
+typedef BOOL(WINAPI *PFN_PlaySoundW)(LPCWSTR pszSound, HMODULE hmod,
+                                     DWORD fdwSound);
 
 // --- Original Function Pointers ---
 static PFN_waveOutOpen Real_waveOutOpen = nullptr;
 static PFN_waveOutClose Real_waveOutClose = nullptr;
 static PFN_waveOutWrite Real_waveOutWrite = nullptr;
 static PFN_waveOutReset Real_waveOutReset = nullptr;
+static PFN_PlaySoundA Real_PlaySoundA = nullptr;
+static PFN_PlaySoundW Real_PlaySoundW = nullptr;
 
 // --- Hooked Functions ---
 MMRESULT WINAPI Hook_waveOutOpen(LPHWAVEOUT phwo, UINT uDeviceID,
@@ -431,12 +455,10 @@ MMRESULT WINAPI Hook_waveOutOpen(LPHWAVEOUT phwo, UINT uDeviceID,
   return Real_waveOutOpen(phwo, uDeviceID, pwfx, dwCallback, dwInstance,
                           fdwOpen);
 }
-
 MMRESULT WINAPI Hook_waveOutClose(HWAVEOUT hwo) {
   Log(format_string("[waveOut] waveOutClose -> Handle: 0x%p", hwo).c_str());
   return Real_waveOutClose(hwo);
 }
-
 MMRESULT WINAPI Hook_waveOutWrite(HWAVEOUT hwo, LPWAVEHDR pwh, UINT cbwh) {
   Log(format_string("[waveOut] waveOutWrite -> Handle: 0x%p, BufferLength: "
                     "%lu, Flags: 0x%lX",
@@ -444,27 +466,10 @@ MMRESULT WINAPI Hook_waveOutWrite(HWAVEOUT hwo, LPWAVEHDR pwh, UINT cbwh) {
           .c_str());
   return Real_waveOutWrite(hwo, pwh, cbwh);
 }
-
 MMRESULT WINAPI Hook_waveOutReset(HWAVEOUT hwo) {
   Log(format_string("[waveOut] waveOutReset -> Handle: 0x%p", hwo).c_str());
   return Real_waveOutReset(hwo);
 }
-
-// ===================================================================================
-// 5. High-Level PlaySound Hooks
-// ===================================================================================
-
-// --- Function Pointer Definitions ---
-typedef BOOL(WINAPI *PFN_PlaySoundA)(LPCSTR pszSound, HMODULE hmod,
-                                     DWORD fdwSound);
-typedef BOOL(WINAPI *PFN_PlaySoundW)(LPCWSTR pszSound, HMODULE hmod,
-                                     DWORD fdwSound);
-
-// --- Original Function Pointers ---
-static PFN_PlaySoundA Real_PlaySoundA = nullptr;
-static PFN_PlaySoundW Real_PlaySoundW = nullptr;
-
-// --- Hooked Functions ---
 BOOL WINAPI Hook_PlaySoundA(LPCSTR pszSound, HMODULE hmod, DWORD fdwSound) {
   Log(format_string("[PlaySound] PlaySoundA -> SoundName: %s, Flags: 0x%lX",
                     (fdwSound & SND_MEMORY) ? "(memory)"
@@ -473,9 +478,7 @@ BOOL WINAPI Hook_PlaySoundA(LPCSTR pszSound, HMODULE hmod, DWORD fdwSound) {
           .c_str());
   return Real_PlaySoundA(pszSound, hmod, fdwSound);
 }
-
 BOOL WINAPI Hook_PlaySoundW(LPCWSTR pszSound, HMODULE hmod, DWORD fdwSound) {
-  // For logging, we convert wide string to multibyte string
   char soundNameMb[256] = {0};
   if (!(fdwSound & SND_MEMORY) && pszSound) {
     WideCharToMultiByte(CP_ACP, 0, pszSound, -1, soundNameMb,
@@ -496,12 +499,12 @@ BOOL WINAPI Hook_PlaySoundW(LPCWSTR pszSound, HMODULE hmod, DWORD fdwSound) {
 // ===================================================================================
 
 void AttachHooks() {
-  // --- WASAPI ---
-  // We can't hook CoCreateInstance easily for all cases, so we hook a
-  // lower-level API. A good target is MMDevAPI's Activate method. We need to
-  // get a pointer to it first. We do this by creating a temporary device
-  // enumerator.
+  Log("====== Attaching Audio Hooks... ======");
 
+  // --- WASAPI ---
+  // NOTE: Calling CoCreateInstance in DllMain is DANGEROUS and can cause
+  // deadlocks. This is done here to get a VTable pointer, but a safer method
+  // would be to hook CoCreateInstance itself.
   // IMMDeviceEnumerator *pEnumerator = NULL;
   // IMMDevice *pDevice = NULL;
   // if (SUCCEEDED(CoInitialize(NULL))) {
@@ -511,7 +514,9 @@ void AttachHooks() {
   //     if (SUCCEEDED(pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole,
   //                                                        &pDevice))) {
   //       void **vtable = *(void ***)pDevice;
-  //       Real_IMMDevice_Activate = (PFN_IMMDevice_Activate)vtable[5];
+  //       // Hook IMMDevice::Activate (index 5)
+  //       VTableHook(vtable, 5, (void *)Hook_IMMDevice_Activate,
+  //                  (void **)&Real_IMMDevice_Activate);
   //       pDevice->Release();
   //     }
   //     pEnumerator->Release();
@@ -519,107 +524,86 @@ void AttachHooks() {
   //   CoUninitialize();
   // }
 
-  // --- XAudio2 ---
+  // --- XAudio2, DirectSound, waveOut, PlaySound (Exported Functions) ---
+  // We hook these using a simple inline hook on the function's entry point.
   HMODULE hXAudio = GetModuleHandleA("XAudio2_9.dll");
   if (!hXAudio)
     hXAudio = GetModuleHandleA("XAudio2_8.dll");
   if (!hXAudio)
     hXAudio = GetModuleHandleA("XAudio2_7.dll");
   if (hXAudio) {
-    Real_XAudio2Create =
-        (PFN_XAudio2Create)GetProcAddress(hXAudio, "XAudio2Create");
+    void *pfn = GetProcAddress(hXAudio, "XAudio2Create");
+    if (pfn)
+      InlineHook(pfn, Hook_XAudio2Create, (void **)&Real_XAudio2Create);
   }
 
-  // --- DirectSound ---
   HMODULE hDsound = GetModuleHandleA("dsound.dll");
   if (hDsound) {
-    Real_DirectSoundCreate =
-        (PFN_DirectSoundCreate)GetProcAddress(hDsound, "DirectSoundCreate");
-    Real_DirectSoundCreate8 =
-        (PFN_DirectSoundCreate8)GetProcAddress(hDsound, "DirectSoundCreate8");
+    void *pfnCreate = GetProcAddress(hDsound, "DirectSoundCreate");
+    if (pfnCreate)
+      InlineHook(pfnCreate, Hook_DirectSoundCreate,
+                 (void **)&Real_DirectSoundCreate);
+    void *pfnCreate8 = GetProcAddress(hDsound, "DirectSoundCreate8");
+    if (pfnCreate8)
+      InlineHook(pfnCreate8, Hook_DirectSoundCreate8,
+                 (void **)&Real_DirectSoundCreate8);
   }
 
-  // --- waveOut & PlaySound ---
   HMODULE hWinmm = GetModuleHandleA("winmm.dll");
   if (hWinmm) {
-    Real_waveOutOpen = (PFN_waveOutOpen)GetProcAddress(hWinmm, "waveOutOpen");
-    Real_waveOutClose =
-        (PFN_waveOutClose)GetProcAddress(hWinmm, "waveOutClose");
-    Real_waveOutWrite =
-        (PFN_waveOutWrite)GetProcAddress(hWinmm, "waveOutWrite");
-    Real_waveOutReset =
-        (PFN_waveOutReset)GetProcAddress(hWinmm, "waveOutReset");
-    Real_PlaySoundA = (PFN_PlaySoundA)GetProcAddress(hWinmm, "PlaySoundA");
-    Real_PlaySoundW = (PFN_PlaySoundW)GetProcAddress(hWinmm, "PlaySoundW");
+    void *pfnOpen = GetProcAddress(hWinmm, "waveOutOpen");
+    if (pfnOpen)
+      InlineHook(pfnOpen, Hook_waveOutOpen, (void **)&Real_waveOutOpen);
+    void *pfnClose = GetProcAddress(hWinmm, "waveOutClose");
+    if (pfnClose)
+      InlineHook(pfnClose, Hook_waveOutClose, (void **)&Real_waveOutClose);
+    void *pfnWrite = GetProcAddress(hWinmm, "waveOutWrite");
+    if (pfnWrite)
+      InlineHook(pfnWrite, Hook_waveOutWrite, (void **)&Real_waveOutWrite);
+    void *pfnReset = GetProcAddress(hWinmm, "waveOutReset");
+    if (pfnReset)
+      InlineHook(pfnReset, Hook_waveOutReset, (void **)&Real_waveOutReset);
+    void *pfnPlayA = GetProcAddress(hWinmm, "PlaySoundA");
+    if (pfnPlayA)
+      InlineHook(pfnPlayA, Hook_PlaySoundA, (void **)&Real_PlaySoundA);
+    void *pfnPlayW = GetProcAddress(hWinmm, "PlaySoundW");
+    if (pfnPlayW)
+      InlineHook(pfnPlayW, Hook_PlaySoundW, (void **)&Real_PlaySoundW);
   }
 
-  // --- Attach all hooks in a single transaction ---
-  DetourTransactionBegin();
-  DetourUpdateThread(GetCurrentThread());
-
-  // if (Real_IMMDevice_Activate)
-  //   DetourAttach(&(PVOID &)Real_IMMDevice_Activate, Hook_IMMDevice_Activate);
-  if (Real_XAudio2Create)
-    DetourAttach(&(PVOID &)Real_XAudio2Create, Hook_XAudio2Create);
-  if (Real_DirectSoundCreate)
-    DetourAttach(&(PVOID &)Real_DirectSoundCreate, Hook_DirectSoundCreate);
-  if (Real_DirectSoundCreate8)
-    DetourAttach(&(PVOID &)Real_DirectSoundCreate8, Hook_DirectSoundCreate8);
-  if (Real_waveOutOpen)
-    DetourAttach(&(PVOID &)Real_waveOutOpen, Hook_waveOutOpen);
-  if (Real_waveOutClose)
-    DetourAttach(&(PVOID &)Real_waveOutClose, Hook_waveOutClose);
-  if (Real_waveOutWrite)
-    DetourAttach(&(PVOID &)Real_waveOutWrite, Hook_waveOutWrite);
-  if (Real_waveOutReset)
-    DetourAttach(&(PVOID &)Real_waveOutReset, Hook_waveOutReset);
-  if (Real_PlaySoundA)
-    DetourAttach(&(PVOID &)Real_PlaySoundA, Hook_PlaySoundA);
-  if (Real_PlaySoundW)
-    DetourAttach(&(PVOID &)Real_PlaySoundW, Hook_PlaySoundW);
-
-  if (DetourTransactionCommit() == NO_ERROR) {
-    Log("====== All Audio Hooks Attached Successfully ======");
-  } else {
-    Log("!!!!!! FAILED to attach audio hooks !!!!!!");
-  }
+  Log("====== Audio Hooks Attached ======");
 }
 
 void DetachHooks() {
-  DetourTransactionBegin();
-  DetourUpdateThread(GetCurrentThread());
-
-  // if (Real_IMMDevice_Activate)
-  //   DetourDetach(&(PVOID &)Real_IMMDevice_Activate, Hook_IMMDevice_Activate);
+  Log("====== Detaching All Audio Hooks ======");
+  // Unhook all inline hooks
   if (Real_XAudio2Create)
-    DetourDetach(&(PVOID &)Real_XAudio2Create, Hook_XAudio2Create);
+    InlineUnhook((void *)Real_XAudio2Create);
   if (Real_DirectSoundCreate)
-    DetourDetach(&(PVOID &)Real_DirectSoundCreate, Hook_DirectSoundCreate);
+    InlineUnhook((void *)Real_DirectSoundCreate);
   if (Real_DirectSoundCreate8)
-    DetourDetach(&(PVOID &)Real_DirectSoundCreate8, Hook_DirectSoundCreate8);
+    InlineUnhook((void *)Real_DirectSoundCreate8);
   if (Real_waveOutOpen)
-    DetourDetach(&(PVOID &)Real_waveOutOpen, Hook_waveOutOpen);
+    InlineUnhook((void *)Real_waveOutOpen);
   if (Real_waveOutClose)
-    DetourDetach(&(PVOID &)Real_waveOutClose, Hook_waveOutClose);
+    InlineUnhook((void *)Real_waveOutClose);
   if (Real_waveOutWrite)
-    DetourDetach(&(PVOID &)Real_waveOutWrite, Hook_waveOutWrite);
+    InlineUnhook((void *)Real_waveOutWrite);
   if (Real_waveOutReset)
-    DetourDetach(&(PVOID &)Real_waveOutReset, Hook_waveOutReset);
+    InlineUnhook((void *)Real_waveOutReset);
   if (Real_PlaySoundA)
-    DetourDetach(&(PVOID &)Real_PlaySoundA, Hook_PlaySoundA);
+    InlineUnhook((void *)Real_PlaySoundA);
   if (Real_PlaySoundW)
-    DetourDetach(&(PVOID &)Real_PlaySoundW, Hook_PlaySoundW);
+    InlineUnhook((void *)Real_PlaySoundW);
 
-  DetourTransactionCommit();
-  Log("====== All Audio Hooks Detached ======");
+  // Note: VTable hooks are harder to unhook globally and safely,
+  // as the original VTable might be unloaded. Since we are detaching on
+  // process exit, it's generally okay to leave them patched.
+  // A more robust solution would track all patched VTables.
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call,
                       LPVOID lpReserved) {
-  if (DetourIsHelperProcess()) {
-    return TRUE;
-  }
-
   switch (ul_reason_for_call) {
   case DLL_PROCESS_ATTACH:
     DisableThreadLibraryCalls(hModule);
