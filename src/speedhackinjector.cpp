@@ -59,10 +59,12 @@ int main(int argc, char *argv[]) {
              << selected_process_name << L"' and their children..."
              << std::endl;
   const auto &roots_to_inject = grouped_processes.at(selected_process_name);
+  std::vector<DWORD> injectedPIDs; // 存储所有被注入的PID
   for (const auto &root_proc : roots_to_inject) {
     std::wcout << L"--- Starting injection for root PID: " << root_proc.pid
                << L" ---" << std::endl;
-    InjectIntoProcessAndChildren(root_proc.pid, dllPath, all_processes);
+    InjectIntoProcessAndChildren(root_proc.pid, dllPath, all_processes,
+                                 injectedPIDs);
   }
   std::wcout << L"\nInjection process for the tree completed." << std::endl;
 

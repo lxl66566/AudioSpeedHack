@@ -16,6 +16,7 @@ bool InjectDll(DWORD processId, const std::wstring &dllPath);
 // 注入一个根进程及其所有同名子进程
 void InjectIntoProcessAndChildren(
     DWORD root_pid, const std::wstring &dllPath,
-    const std::unordered_map<DWORD, ProcessInfo> &all_processes);
+    const std::unordered_map<DWORD, ProcessInfo> &all_processes,
+    std::vector<DWORD> &injectedPIDs);
 
 #endif // INJECTION_H

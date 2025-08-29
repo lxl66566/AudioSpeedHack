@@ -179,15 +179,11 @@ int main() {
   std::vector<DWORD> injectedPIDs; // 存储所有被注入的PID
 
   for (const auto &root_proc : roots_to_inject) {
-    std::wcout << L"--- Injecting into root PID: " << root_proc.pid << L" ---"
-               << std::endl;
-    if (InjectDll(root_proc.pid, dllPath)) {
-      std::wcout << L"Injection successful for PID: " << root_proc.pid
-                 << std::endl;
-      injectedPIDs.push_back(root_proc.pid);
-    } else {
-      std::wcout << L"Injection failed for PID: " << root_proc.pid << std::endl;
-    }
+    std::wcout << L"--- Injecting into root PID: " << root_proc.pid << L" ("
+               << root_proc.name << L") and its children ---" << std::endl;
+    // 调用 InjectIntoProcessAndChildren 来递归注入，并收集所有被注入的PID
+    InjectIntoProcessAndChildren(root_proc.pid, dllPath, all_processes,
+                                 injectedPIDs);
   }
 
   if (injectedPIDs.empty()) {

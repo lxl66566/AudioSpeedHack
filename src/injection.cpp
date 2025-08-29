@@ -66,7 +66,8 @@ bool InjectDll(DWORD processId, const std::wstring &dllPath) {
 
 void InjectIntoProcessAndChildren(
     DWORD root_pid, const std::wstring &dllPath,
-    const std::unordered_map<DWORD, ProcessInfo> &all_processes) {
+    const std::unordered_map<DWORD, ProcessInfo> &all_processes,
+    std::vector<DWORD> &injectedPIDs) {
   std::unordered_map<DWORD, std::vector<DWORD>> children_map;
   for (const auto &pair : all_processes) {
     children_map[pair.second.parent_pid].push_back(pair.second.pid);
@@ -83,6 +84,7 @@ void InjectIntoProcessAndChildren(
                << all_processes.at(current_pid).name << L")... ";
     if (InjectDll(current_pid, dllPath)) {
       std::wcout << L"Success!" << std::endl;
+      injectedPIDs.push_back(current_pid); // 将成功注入的PID添加到列表中
       if (children_map.count(current_pid)) {
         for (DWORD child_pid : children_map.at(current_pid)) {
           to_inject.push_back(child_pid);

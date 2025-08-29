@@ -9,3 +9,4 @@ build/
 *.obj
 *.exe
 compile_commands.json
+*.ogg
