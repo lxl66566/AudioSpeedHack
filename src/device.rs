@@ -7,7 +7,7 @@ use pitch_shift::PitchShifter;
 use ringbuf::HeapRb;
 use terminal_menu::{button, label, menu, mut_menu, run};
 
-use crate::constant::*;
+use crate::{constant::*, utils::AudioExt};
 
 #[derive(Debug, Clone, Copy)]
 pub enum DeviceType {
@@ -111,6 +111,25 @@ impl DeviceManager {
         Ok(())
     }
 
+    /// 根据索引选择输入输出设备
+    pub fn select_device(&mut self, device_type: DeviceType, index: usize) -> Result<()> {
+        let mut devices = self
+            .host
+            .devices()?
+            .filter(|d| match device_type {
+                DeviceType::Input => d.default_input_config().is_ok(),
+                DeviceType::Output => d.default_output_config().is_ok(),
+            })
+            .collect::<Vec<_>>();
+
+        if devices.is_empty() {
+            anyhow::bail!("未找到可用的{}设备。", device_type);
+        }
+
+        self.set_device(device_type, devices.remove(index));
+        Ok(())
+    }
+
     /// TUI 交互式选择输入输出设备
     pub fn select_device_tui(&mut self, device_type: DeviceType) -> Result<()> {
         let mut devices = self
@@ -157,7 +176,7 @@ impl DeviceManager {
         Ok(())
     }
 
-    pub fn run_process(self) -> Result<()> {
+    pub fn run_process(self, speed: f32) -> anyhow::Result<()> {
         let input_device = self.input_device.expect("输入设备不存在");
         let output_device = self.output_device.expect("输出设备不存在");
 
@@ -261,7 +280,7 @@ impl DeviceManager {
                 for ch in 0..input_channels {
                     shifters[ch].shift_pitch(
                         OVERSAMPLING,
-                        PITCH_SHIFT_SEMITONES,
+                        speed.to_pitch(),
                         &channel_buffers[ch],
                         &mut processed_channels[ch],
                     );

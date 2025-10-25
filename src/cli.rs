@@ -11,18 +11,23 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// 修改注册表，使游戏优先从当前目录加载 dsound.dll
+    #[clap(alias = "p")]
     PreRegister,
 
     /// 列出所有可用的输入输出音频设备及其配置与索引
+    #[clap(alias = "l")]
     ListDevices,
 
     /// 根据选择，解压相应的 DLL
+    #[clap(alias = "u")]
     UnpackDll(UnpackDllArgs),
 
     /// 启动音频处理程序
+    #[clap(alias = "s")]
     Start(StartArgs),
 
     /// 解压 DLL 并立即启动音频处理程序
+    #[clap(alias = "us")]
     UnpackAndStart(UnpackAndStartArgs),
 }
 
@@ -31,11 +36,11 @@ pub enum Commands {
 pub struct UnpackDllArgs {
     /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
     #[arg(long)]
-    win64: bool,
+    pub win64: bool,
 
     /// 设置速度参数 (范围: 1.0 ~ 2.5)
     #[arg(short, long)]
-    speed: f32,
+    pub speed: f32,
 }
 
 /// 'start' 命令的参数
@@ -43,15 +48,19 @@ pub struct UnpackDllArgs {
 pub struct StartArgs {
     /// 指定输入设备的索引
     #[arg(short, long)]
-    input_device: usize,
+    pub input_device: usize,
 
     /// 指定输出设备的索引
     #[arg(short, long)]
-    output_device: usize,
+    pub output_device: usize,
+
+    /// 设置速度参数 (范围: 1.0 ~ 2.5)
+    #[arg(short, long)]
+    pub speed: f32,
 
     /// 开始加速并执行命令或外部程序
     #[arg(long)]
-    exec: Option<String>,
+    pub exec: Option<String>,
 }
 
 /// 'unpack-and-start' 命令的参数
@@ -60,8 +69,8 @@ pub struct StartArgs {
 #[derive(Args, Debug)]
 pub struct UnpackAndStartArgs {
     #[command(flatten)]
-    unpack_args: UnpackDllArgs,
+    pub unpack_args: UnpackDllArgs,
 
     #[command(flatten)]
-    start_args: StartArgs,
+    pub start_args: StartArgs,
 }

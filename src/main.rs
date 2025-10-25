@@ -3,6 +3,9 @@ pub mod cli;
 pub mod constant;
 pub mod device;
 pub mod log;
+pub mod utils;
+
+use std::{env, fs, process};
 
 use clap::Parser;
 
@@ -24,16 +27,40 @@ fn main() -> anyhow::Result<()> {
             todo!()
         }
         Commands::UnpackDll(args) => {
-            todo!()
+            let system = if args.win64 {
+                constant::System::Win64
+            } else {
+                constant::System::Win32
+            };
+            asset::extract_selected_assets(system, args.speed, env::current_dir()?)?;
         }
         Commands::Start(args) => {
             let mut device_manager = DeviceManager::default();
-            device_manager.select_device_tui(DeviceType::Input)?;
-            device_manager.select_device_tui(DeviceType::Output)?;
-            device_manager.run_process()?;
+            device_manager.select_device(DeviceType::Input, args.input_device)?;
+            device_manager.select_device(DeviceType::Output, args.output_device)?;
+            let _child;
+            if let Some(exec) = args.exec {
+                _child = process::Command::new(exec).spawn()?;
+            }
+            device_manager.run_process(args.speed)?;
         }
         Commands::UnpackAndStart(args) => {
-            todo!()
+            let extracted = asset::extract_selected_assets(
+                constant::System::Win32,
+                args.unpack_args.speed,
+                env::current_dir()?,
+            )?;
+            let mut device_manager = DeviceManager::default();
+            device_manager.select_device(DeviceType::Input, args.start_args.input_device)?;
+            device_manager.select_device(DeviceType::Output, args.start_args.output_device)?;
+            let _child;
+            if let Some(exec) = args.start_args.exec {
+                _child = process::Command::new(exec).spawn()?;
+            }
+            device_manager.run_process(args.start_args.speed)?;
+            for f in extracted {
+                fs::remove_file(f)?;
+            }
         }
     }
 
