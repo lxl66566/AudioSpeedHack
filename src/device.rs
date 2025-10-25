@@ -1,4 +1,3 @@
-
 use anyhow::Result;
 use cpal::traits::{DeviceTrait, HostTrait};
 use terminal_menu::{button, label, menu, mut_menu, run};
@@ -96,13 +95,10 @@ pub fn select_device(host: &cpal::Host, device_type: DeviceType) -> anyhow::Resu
     }
 
     // 创建菜单项
-    let mut menu_items = vec![
-        label("----------------------"),
-        label(format!("请选择一个{}设备:", device_type)),
-        label("使用方向键选择, Enter确认"),
-        label("'q' 或 esc 退出"),
-        label("-----------------------"),
-    ];
+    let mut menu_items = vec![label(format!(
+        "请选择{}设备，使用方向键选择, Enter确认：",
+        device_type
+    ))];
 
     // 将每个设备添加为按钮
     for device in &devices {
