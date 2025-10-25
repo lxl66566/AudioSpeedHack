@@ -5,7 +5,7 @@ use std::io;
 
 const PITCH_SHIFT_SEMITONES: f32 = -12.0; // 降低一个八度 (12个半音)
 const OVERSAMPLING: usize = 16; // pitch_shifter 的处理质量，值越高，质量越好，CPU占用越高
-const WINDOW_DURATION_MS: usize = 50; // pitch_shifter 的窗口时长，50ms 是一个不错的默认值
+const WINDOW_DURATION_MS: usize = 18; // pitch_shifter 的窗口时长，18ms 是一个不错的默认值。过小或者过大都会导致声音失真。
 const BUFFER_LATENCY_MS: u64 = 100; // 我们的环形缓冲区的延迟，用于平滑输入和输出
 
 fn main() -> anyhow::Result<()> {
