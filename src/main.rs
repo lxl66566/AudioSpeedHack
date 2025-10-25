@@ -1,11 +1,13 @@
+pub mod device;
+pub mod log;
+
 use std::io;
 
+use ::log::{error, info};
 use cpal::traits::{DeviceTrait, StreamTrait};
+use device::{DeviceType, select_device};
 use pitch_shift::PitchShifter;
 use ringbuf::HeapRb;
-
-mod device;
-pub use device::{DeviceType, select_device};
 
 const PITCH_SHIFT_SEMITONES: f32 = -12.0; // 降低一个八度 (12个半音)
 const OVERSAMPLING: usize = 16; // pitch_shifter 的处理质量，值越高，质量越好，CPU占用越高
@@ -13,13 +15,17 @@ const WINDOW_DURATION_MS: usize = 18; // pitch_shifter 的窗口时长，18ms �
 const BUFFER_LATENCY_MS: u64 = 100; // 我们的环形缓冲区的延迟，用于平滑输入和输出
 
 fn main() -> anyhow::Result<()> {
+    log::log_init();
+
     let host = cpal::default_host();
     let input_device = select_device(&host, DeviceType::Input)?;
     let output_device = select_device(&host, DeviceType::Output)?;
 
-    println!("\n选择的设备:");
-    println!("  输入: {}", input_device.name()?);
-    println!("  输出: {}", output_device.name()?);
+    info!(
+        "输入设备: {}，输出设备: {}",
+        input_device.name()?,
+        output_device.name()?
+    );
 
     // 3. 获取并配置设备
     // MODIFIED: 我们不再简单地获取两个默认配置然后比较，而是以输入配置为基准，
@@ -46,12 +52,11 @@ fn main() -> anyhow::Result<()> {
     let out_config: cpal::StreamConfig = supported_out_configs.with_sample_rate(sample_rate).into();
     let output_channels = out_config.channels as usize;
 
-    println!("\n音频流配置:");
-    println!("  采样率: {} Hz", sample_rate.0);
-    println!("  采样格式: f32");
-    println!("  输入声道数: {}", input_channels);
-    println!(
-        "  输出声道数: {} (将把输入声道映射到前 {} 个声道)",
+    info!("采样率: {} Hz", sample_rate.0);
+    info!("采样格式: f32");
+    info!("输入声道数: {}", input_channels);
+    info!(
+        "输出声道数: {} (将把输入声道映射到前 {} 个声道)",
         output_channels,
         input_channels.min(output_channels)
     );
@@ -69,7 +74,7 @@ fn main() -> anyhow::Result<()> {
     let ring_buffer = HeapRb::<f32>::new(buffer_size);
     let (mut producer, mut consumer) = ring_buffer.split();
 
-    // 6. 创建并运行输入流 (这部分无需改变)
+    // 6. 创建并运行输入流
     let input_stream = input_device.build_input_stream(
         &in_config.into(),
         move |data: &[f32], _: &cpal::InputCallbackInfo| {
@@ -78,7 +83,7 @@ fn main() -> anyhow::Result<()> {
                 // eprintln!("输入缓冲区溢出");
             }
         },
-        |err| eprintln!("输入流错误: {}", err),
+        |err| error!("输入流错误: {}", err),
         None,
     )?;
 
@@ -136,7 +141,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         },
-        |err| eprintln!("输出流错误: {}", err),
+        |err| error!("输出流错误: {}", err),
         None,
     )?;
 
@@ -144,13 +149,10 @@ fn main() -> anyhow::Result<()> {
     input_stream.play()?;
     output_stream.play()?;
 
-    println!("\n>>> 音频流已启动！正在将麦克风输入降低一个八度后播放。");
-    println!(">>> 按 Enter 键退出程序。");
+    info!("音频流已启动！正在将麦克风输入降低一个八度后播放。");
+    info!("按 Enter 键退出程序。");
 
-    // 9. 保持主线程运行
     let mut _buffer = String::new();
     io::stdin().read_line(&mut _buffer)?;
-
-    println!("程序退出。");
     Ok(())
 }
