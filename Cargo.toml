@@ -1,0 +1,10 @@
+[package]
+name = "AudioSpeedHack"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cpal = "0.16"
+ringbuf = "0.3"
+anyhow = "1.0.75"
+pitch_shift = "1.0.0"
