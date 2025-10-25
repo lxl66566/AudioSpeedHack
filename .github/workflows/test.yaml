@@ -1,0 +1,24 @@
+name: Test
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    tags:
+      - v*
+
+jobs:
+  test:
+    name: cargo test
+    runs-on: ubuntu-latest
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: "sccache"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cargo-bins/cargo-binstall@main
+      - run: cargo binstall -y --no-symlinks cargo-nextest
+      - name: Setup sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo nextest run --all-features --no-tests pass
