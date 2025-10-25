@@ -1,7 +1,11 @@
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use std::io;
+
+use cpal::traits::{DeviceTrait, StreamTrait};
 use pitch_shift::PitchShifter;
 use ringbuf::HeapRb;
-use std::io;
+
+mod device;
+pub use device::{DeviceType, select_device};
 
 const PITCH_SHIFT_SEMITONES: f32 = -12.0; // 降低一个八度 (12个半音)
 const OVERSAMPLING: usize = 16; // pitch_shifter 的处理质量，值越高，质量越好，CPU占用越高
@@ -9,14 +13,9 @@ const WINDOW_DURATION_MS: usize = 18; // pitch_shifter 的窗口时长，18ms �
 const BUFFER_LATENCY_MS: u64 = 100; // 我们的环形缓冲区的延迟，用于平滑输入和输出
 
 fn main() -> anyhow::Result<()> {
-    println!("--- Rust 音频实时变调程序 ---");
-
-    // 1. 初始化音频主机
     let host = cpal::default_host();
-
-    // 2. 选择输入和输出设备
-    let input_device = select_device(&host, "输入")?;
-    let output_device = select_device(&host, "输出")?;
+    let input_device = select_device(&host, DeviceType::Input)?;
+    let output_device = select_device(&host, DeviceType::Output)?;
 
     println!("\n选择的设备:");
     println!("  输入: {}", input_device.name()?);
@@ -122,7 +121,8 @@ fn main() -> anyhow::Result<()> {
             }
 
             // 3. 合并声道 (Interleave) - NEW: 这是关键的修改
-            // 我们将处理好的 `input_channels` 个声道的数据，映射到 `output_channels` 个声道的输出缓冲区中
+            // 我们将处理好的 `input_channels` 个声道的数据，映射到 `output_channels`
+            // 个声道的输出缓冲区中
             for (i, frame) in data.chunks_exact_mut(output_channels).enumerate() {
                 // 先将整个输出帧填充为静音
                 frame.fill(0.0);
@@ -153,47 +153,4 @@ fn main() -> anyhow::Result<()> {
 
     println!("程序退出。");
     Ok(())
-}
-
-// 辅助函数 `select_device` 无需修改，保持原样
-fn select_device(host: &cpal::Host, device_type: &str) -> anyhow::Result<cpal::Device> {
-    let mut devices = host
-        .devices()?
-        .filter(|d| {
-            if device_type == "输入" {
-                d.default_input_config().is_ok()
-            } else {
-                d.default_output_config().is_ok()
-            }
-        })
-        .collect::<Vec<_>>();
-
-    if devices.is_empty() {
-        anyhow::bail!("未找到可用的{}设备。", device_type);
-    }
-
-    println!("\n请选择一个{}设备:", device_type);
-    for (i, device) in devices.iter().enumerate() {
-        println!(
-            "  {}: {}",
-            i,
-            device.name().unwrap_or_else(|_| "未知设备".to_string())
-        );
-    }
-
-    loop {
-        print!("请输入设备编号: ");
-        io::Write::flush(&mut io::stdout())?;
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
-        match input.trim().parse::<usize>() {
-            Ok(index) if index < devices.len() => {
-                return Ok(devices.remove(index));
-            }
-            _ => {
-                println!("无效的输入，请输入列表中的数字。");
-            }
-        }
-    }
 }
