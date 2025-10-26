@@ -1,7 +1,14 @@
 [package]
-edition = "2024"
-name    = "AudioSpeedHack"
-version = "0.1.0"
+authors     = ["lxl66566 <lxl66566@gmail.com>"]
+categories  = ["command-line-utilities", "games", "multimedia::audio"]
+description = "Accelerate audio in dsound.dll-based games."
+edition     = "2024"
+keywords    = ["audio", "speed", "speedup", "dsound"]
+license     = "MIT"
+name        = "AudioSpeedHack"
+readme      = "README.md"
+repository  = "https://github.com/lxl66566/AudioSpeedHack"
+version     = "0.1.0"
 
 [dependencies]
 anyhow            = "1.0.75"
@@ -15,3 +22,10 @@ ringbuf           = "0.3"
 strum             = "0.27"
 strum_macros      = "0.27"
 terminal-menu     = "3.1.0"
+
+
+[profile.release]
+lto       = true
+opt-level = "z"
+panic     = "abort"
+strip     = true

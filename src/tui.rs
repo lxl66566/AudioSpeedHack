@@ -1,28 +1,14 @@
+use std::fs;
+
 use anyhow::{Context, Result};
 use cpal::traits::{DeviceTrait, HostTrait};
-use std::fs;
 use terminal_menu::{
     TerminalMenuItem, back_button, button, label, list, menu, mut_menu, run, submenu,
 };
 
-// 导入您在 main.rs 中定义的 pub clap 结构体
-use crate::cli::*;
+use crate::{cli::*, device::DeviceType};
 
-/// 设备类型，用于区分输入和输出
-#[derive(Clone, Copy)]
-pub enum DeviceType {
-    Input,
-    Output,
-}
-
-impl std::fmt::Display for DeviceType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DeviceType::Input => write!(f, "输入"),
-            DeviceType::Output => write!(f, "输出"),
-        }
-    }
-}
+const NONE_EXEC_ITEM: &str = "None";
 
 /// 非交互式地获取可用设备名称列表
 fn get_device_names(device_type: DeviceType) -> Result<Vec<String>> {
@@ -56,16 +42,16 @@ pub fn run_tui() -> Result<Cli> {
     // 2. 构建菜单
     let main_menu = menu(vec![
         label("请选择一个要执行的操作，按 q 退出:"),
-        button("ListDevices (列出设备)"),
-        submenu("UnpackDll (解压DLL)", unpack_dll_menu()),
-        submenu(
-            "Start (启动程序)",
-            start_menu(&input_devices, &output_devices, &executable_options),
-        ),
         submenu(
             "UnpackAndStart (解压并启动)",
             unpack_and_start_menu(&input_devices, &output_devices, &executable_options),
         ),
+        submenu(
+            "Start (启动程序)",
+            start_menu(&input_devices, &output_devices, &executable_options),
+        ),
+        submenu("UnpackDll (解压DLL)", unpack_dll_menu()),
+        button("ListDevices (列出设备)"),
         button("Exit (退出)"),
     ]);
 
@@ -109,7 +95,7 @@ pub fn run_tui() -> Result<Cli> {
                 .context("选择的输出设备无效")?;
 
             let exec_selection = sub_menu.selection_value("执行程序 (可选)");
-            let exec = if exec_selection == "None" {
+            let exec = if exec_selection == NONE_EXEC_ITEM {
                 None
             } else {
                 Some(exec_selection.to_string())
@@ -141,7 +127,7 @@ pub fn run_tui() -> Result<Cli> {
                 .context("选择的输出设备无效")?;
 
             let exec_selection = sub_menu.selection_value("执行程序 (可选)");
-            let exec = if exec_selection == "None" {
+            let exec = if exec_selection == NONE_EXEC_ITEM {
                 None
             } else {
                 Some(exec_selection.to_string())
@@ -217,9 +203,25 @@ fn speed_options() -> Vec<&'static str> {
 
 /// 获取当前目录下的文件和文件夹作为 `exec` 的选项
 fn exec_options() -> Vec<String> {
-    let mut options = vec!["None".to_string()]; // 提供不选择的选项
+    let mut options = vec![NONE_EXEC_ITEM.to_string()]; // 提供不选择的选项
     if let Ok(entries) = fs::read_dir(".") {
-        for entry in entries.flatten() {
+        for entry in entries
+            .flatten()
+            .filter(|e| e.file_type().map(|t| t.is_file()).unwrap_or(false))
+            .filter(|e| {
+                // 过滤掉自身
+                if let Some(name) = e.file_name().to_str()
+                    && name.contains(env!("CARGO_PKG_NAME"))
+                {
+                    return false;
+                }
+                if let Some(ext) = e.path().extension().and_then(|e| e.to_str()) {
+                    return ["exe", "bat", "cmd", "ps1", "sh"]
+                        .contains(&ext.to_lowercase().as_str());
+                }
+                false
+            })
+        {
             if let Some(name) = entry.file_name().to_str() {
                 options.push(name.to_string());
             }

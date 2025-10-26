@@ -5,7 +5,6 @@ use anyhow::Result;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use pitch_shift::PitchShifter;
 use ringbuf::HeapRb;
-use terminal_menu::{button, label, menu, mut_menu, run};
 
 use crate::utils::AudioExt;
 
@@ -131,52 +130,6 @@ impl DeviceManager {
         }
 
         self.set_device(device_type, devices.remove(index));
-        Ok(())
-    }
-
-    /// TUI 交互式选择输入输出设备
-    pub fn select_device_tui(&mut self, device_type: DeviceType) -> Result<()> {
-        let mut devices = self
-            .host
-            .devices()?
-            .filter(|d| match device_type {
-                DeviceType::Input => d.default_input_config().is_ok(),
-                DeviceType::Output => d.default_output_config().is_ok(),
-            })
-            .collect::<Vec<_>>();
-
-        if devices.is_empty() {
-            anyhow::bail!("未找到可用的{}设备。", device_type);
-        }
-
-        // 创建菜单项
-        let mut menu_items = vec![label(format!(
-            "请选择{}设备，使用方向键选择, Enter确认：",
-            device_type
-        ))];
-
-        // 将每个设备添加为按钮
-        for device in &devices {
-            let device_name = device.name().unwrap_or_else(|_| "Unknown".to_string());
-            menu_items.push(button(device_name));
-        }
-
-        let menu = menu(menu_items);
-        run(&menu);
-
-        if mut_menu(&menu).canceled() {
-            anyhow::bail!("用户取消了设备选择。");
-        }
-
-        // 获取选择的设备名称并找到对应的设备
-        let binding = mut_menu(&menu);
-        let selected_name = binding.selected_item_name();
-        let selected_index = devices
-            .iter()
-            .position(|d| d.name().unwrap_or_else(|_| "Unknown".to_string()) == selected_name)
-            .unwrap(); // 在这个逻辑下，我们总是能找到它
-
-        self.set_device(device_type, devices.remove(selected_index));
         Ok(())
     }
 
@@ -314,7 +267,11 @@ impl DeviceManager {
         input_stream.play()?;
         output_stream.play()?;
 
-        info!("音频流已启动！正在将麦克风输入降低一个八度后播放。");
+        info!(
+            "音频流已启动！正在降低音高：speed {:.1}, pitch {:.4}",
+            speed,
+            speed.to_pitch()
+        );
         info!("按 Enter 键退出程序。");
 
         let mut _buffer = String::new();

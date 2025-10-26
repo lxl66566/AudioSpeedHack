@@ -3,9 +3,11 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::utils;
 use anyhow::Result;
 use include_assets::{NamedArchive, include_dir};
+use log::debug;
+
+use crate::utils;
 
 /// 提取选择的资源文件到指定目录
 ///
@@ -39,10 +41,12 @@ pub fn extract_selected_assets(
         ret.push(aldrv_dest.clone());
     }
     fs::write(aldrv_dest, aldrv_bytes)?;
+    debug!("Extracted dsoal-aldrv.dll");
 
     if !dsound_dest.exists() {
         ret.push(dsound_dest.clone());
     }
     fs::write(dsound_dest, dsound_bytes)?;
+    debug!("Extracted dsound.dll");
     Ok(ret)
 }
