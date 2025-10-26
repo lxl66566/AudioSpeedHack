@@ -2,6 +2,7 @@ pub mod asset;
 pub mod cli;
 pub mod device;
 pub mod log;
+pub mod tui;
 pub mod utils;
 
 use std::{env, fs, process};
@@ -12,11 +13,19 @@ use crate::{
     cli::{Cli, Commands},
     device::{DeviceManager, DeviceType},
 };
+use ::log::{debug, info};
 
 fn main() -> anyhow::Result<()> {
     log::log_init();
 
-    let cli = Cli::parse();
+    let cli = if std::env::args().len() > 1 {
+        Cli::parse()
+    } else {
+        info!("TUI mode");
+        tui::run_tui()?
+    };
+
+    info!("args: {:?}", cli);
 
     match cli.command {
         Commands::ListDevices => {
@@ -46,6 +55,7 @@ fn main() -> anyhow::Result<()> {
                 args.speed,
                 env::current_dir()?,
             )?;
+            debug!("extracted files: {extracted:?}");
             let mut device_manager = DeviceManager::default();
             device_manager.select_device(DeviceType::Input, args.input_device)?;
             device_manager.select_device(DeviceType::Output, args.output_device)?;
