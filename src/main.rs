@@ -1,6 +1,5 @@
 pub mod asset;
 pub mod cli;
-pub mod constant;
 pub mod device;
 pub mod log;
 pub mod utils;
@@ -23,14 +22,11 @@ fn main() -> anyhow::Result<()> {
         Commands::ListDevices => {
             DeviceManager::default().list_all_devices()?;
         }
-        Commands::PreRegister => {
-            todo!()
-        }
         Commands::UnpackDll(args) => {
             let system = if args.win64 {
-                constant::System::Win64
+                utils::System::Win64
             } else {
-                constant::System::Win32
+                utils::System::Win32
             };
             asset::extract_selected_assets(system, args.speed, env::current_dir()?)?;
         }
@@ -46,7 +42,7 @@ fn main() -> anyhow::Result<()> {
         }
         Commands::UnpackAndStart(args) => {
             let extracted = asset::extract_selected_assets(
-                constant::System::Win32,
+                utils::System::Win32,
                 args.unpack_args.speed,
                 env::current_dir()?,
             )?;

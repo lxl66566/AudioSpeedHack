@@ -3,10 +3,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::utils;
 use anyhow::Result;
 use include_assets::{NamedArchive, include_dir};
-
-use crate::constant::System;
 
 /// 提取选择的资源文件到指定目录
 ///
@@ -14,7 +13,7 @@ use crate::constant::System;
 ///
 /// 创建的文件路径
 pub fn extract_selected_assets(
-    system: System,
+    system: utils::System,
     speed: f32,
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {

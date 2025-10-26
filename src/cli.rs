@@ -10,10 +10,6 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Commands {
-    /// 修改注册表，使游戏优先从当前目录加载 dsound.dll
-    #[clap(alias = "p")]
-    PreRegister,
-
     /// 列出所有可用的输入输出音频设备及其配置与索引
     #[clap(alias = "l")]
     ListDevices,
