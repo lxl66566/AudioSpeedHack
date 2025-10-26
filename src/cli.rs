@@ -35,7 +35,7 @@ pub struct UnpackDllArgs {
     pub win64: bool,
 
     /// 设置速度参数 (范围: 1.0 ~ 2.5)
-    #[arg(short, long)]
+    #[arg(short, long, value_parser = validate_speed)]
     pub speed: f32,
 }
 
@@ -51,7 +51,7 @@ pub struct StartArgs {
     pub output_device: usize,
 
     /// 设置速度参数 (范围: 1.0 ~ 2.5)
-    #[arg(short, long)]
+    #[arg(short, long, value_parser = validate_speed)]
     pub speed: f32,
 
     /// 开始加速并执行命令或外部程序
@@ -59,14 +59,45 @@ pub struct StartArgs {
     pub exec: Option<String>,
 }
 
-/// 'unpack-and-start' 命令的参数
-///
 /// 这个命令组合了 'unpack-dll' 和 'start' 的所有参数。
 #[derive(Args, Debug)]
 pub struct UnpackAndStartArgs {
-    #[command(flatten)]
-    pub unpack_args: UnpackDllArgs,
+    /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
+    #[arg(long)]
+    pub win64: bool,
 
-    #[command(flatten)]
-    pub start_args: StartArgs,
+    /// 指定输入设备的索引
+    #[arg(short, long)]
+    pub input_device: usize,
+
+    /// 指定输出设备的索引
+    #[arg(short, long)]
+    pub output_device: usize,
+
+    /// 设置速度参数 (范围: 1.0 ~ 2.5)
+    #[arg(short, long, value_parser = validate_speed)]
+    pub speed: f32,
+
+    /// 开始加速并执行命令或外部程序
+    #[arg(long)]
+    pub exec: Option<String>,
+}
+
+/// 自定义验证函数，用于检查 speed 参数是否在 1.0 到 2.5 的范围内。
+#[allow(unused)] // clap used
+fn validate_speed(s: &str) -> Result<f32, String> {
+    // 尝试将输入字符串解析为 f32
+    let speed: f32 = s
+        .parse()
+        .map_err(|_| format!("`{}` 不是一个有效的浮点数", s))?;
+
+    // 检查解析出的值是否在范围内
+    if (1.0..=2.5).contains(&speed) {
+        Ok(speed)
+    } else {
+        Err(format!(
+            "速度参数必须在 1.0 到 2.5 的范围内，但输入的是 {}",
+            speed
+        ))
+    }
 }
