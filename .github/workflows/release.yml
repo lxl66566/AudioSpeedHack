@@ -9,18 +9,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest]
     steps:
       - uses: actions/checkout@v4
       - name: release rust project
         uses: lxl66566/rust-simple-release@main
         with:
           targets: |
-            aarch64-unknown-linux-gnu
-            aarch64-unknown-linux-musl
             x86_64-pc-windows-msvc
-            x86_64-unknown-linux-musl
-            x86_64-unknown-linux-gnu
-            aarch64-apple-darwin
-            x86_64-apple-darwin
           token: ${{ secrets.GH_TOKEN }}

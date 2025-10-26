@@ -10,7 +10,7 @@ on:
 jobs:
   test:
     name: cargo test
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     env:
       SCCACHE_GHA_ENABLED: "true"
       RUSTC_WRAPPER: "sccache"
