@@ -870,8 +870,6 @@ dependencies = [
 [[package]]
 name = "pitch_shift"
 version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc3567157c760c60b1bce23b9341a081cbd0b1c89f1d8ca1b8701fec70ecb20b"
 dependencies = [
  "realfft",
  "rustfft",
