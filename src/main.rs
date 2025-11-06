@@ -1,16 +1,21 @@
 pub mod asset;
+pub mod cache;
 pub mod cli;
 pub mod device;
 pub mod log;
+pub mod reg;
 pub mod tui;
 pub mod utils;
 
-use std::{env, fs, process};
+use std::{env, process};
 
-use ::log::{error, info};
+use ::log::info;
+use anyhow::Result;
 use clap::Parser;
+use config_file2::Storable;
 
 use crate::{
+    cache::GLOBAL_CACHE,
     cli::{Cli, Commands},
     device::{DeviceManager, DeviceType},
 };
@@ -33,6 +38,15 @@ impl<'a> Drop for PauseGuard<'a> {
 }
 
 fn main() -> anyhow::Result<()> {
+    // let my_dll_path = r#"C:\game\MMDevAPI.dll"#;
+    // let add_operation = RegistryOperation::Add {
+    //     dll_path: my_dll_path,
+    // };
+
+    // if let Err(e) = mmdevapi_registry_op(&add_operation) {
+    //     eprintln!("添加注册表项时发生错误: {}", e);
+    //     eprintln!("请检查路径是否正确以及是否具有相应的权限。");
+    // }
     log::log_init();
 
     let cli = if std::env::args().len() > 1 {
@@ -43,6 +57,11 @@ fn main() -> anyhow::Result<()> {
     };
 
     info!("args: {:?}", cli);
+
+    GLOBAL_CACHE
+        .lock()
+        .unwrap()
+        .store_last_command(cli.command.clone())?;
 
     match cli.command {
         Commands::ListDevices => {
@@ -55,7 +74,8 @@ fn main() -> anyhow::Result<()> {
             } else {
                 utils::System::Win32
             };
-            asset::extract_selected_assets(system, args.speed, env::current_dir()?)?;
+            let dlls = asset::extract_selected_assets(system, args.speed, env::current_dir()?)?;
+            GLOBAL_CACHE.lock().unwrap().extend_dlls(dlls)?;
             info!("所有 dll 已解压到当前目录。");
         }
         Commands::Start(args) => {
@@ -67,6 +87,7 @@ fn main() -> anyhow::Result<()> {
                 _child = process::Command::new(exec).spawn()?;
             }
             device_manager.run_process(args.speed)?;
+            clean()?;
         }
         Commands::UnpackAndStart(args) => {
             let extracted = asset::extract_selected_assets(
@@ -85,15 +106,21 @@ fn main() -> anyhow::Result<()> {
                     .spawn()?;
             }
             device_manager.run_process(args.speed)?;
-            for f in extracted {
-                let _pause_guard;
-                if let Err(e) = fs::remove_file(&f) {
-                    error!("Failed to remove file {f:?}: {e}");
-                    _pause_guard = PauseGuard::new("删除解压的 dll 失败，按任意键继续...");
-                }
-            }
+            clean()?;
+        }
+        Commands::Clean => {
+            clean()?;
+            GLOBAL_CACHE.lock().unwrap().clean_self()?;
         }
     }
 
+    Ok(())
+}
+
+fn clean() -> Result<()> {
+    let _pause_guard = PauseGuard::new("按任意键退出...");
+    GLOBAL_CACHE.lock().unwrap().clean_dlls()?;
+    GLOBAL_CACHE.lock().unwrap().clean_regs()?;
+    GLOBAL_CACHE.lock().unwrap().store()?;
     Ok(())
 }

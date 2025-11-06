@@ -1,4 +1,7 @@
+use std::path::PathBuf;
+
 use clap::{Args, Parser, Subcommand};
+use serde::{Deserialize, Serialize};
 
 /// 基于 dsound 的游戏音频加速器
 #[derive(Parser, Debug)]
@@ -8,7 +11,7 @@ pub struct Cli {
     pub command: Commands,
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, Serialize, Deserialize, Clone)]
 pub enum Commands {
     /// 列出所有可用的输入输出音频设备及其配置与索引
     #[clap(alias = "l")]
@@ -25,10 +28,14 @@ pub enum Commands {
     /// 解压 DLL 并立即启动音频处理程序
     #[clap(alias = "us")]
     UnpackAndStart(UnpackAndStartArgs),
+
+    /// 还原所有 AudioSpeedHack 所做的更改，包括注册表项和 DLL 文件
+    #[clap(alias = "c")]
+    Clean,
 }
 
 /// 'unpack-dll' 命令的参数
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Serialize, Deserialize, Clone)]
 pub struct UnpackDllArgs {
     /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
     #[arg(long)]
@@ -40,7 +47,7 @@ pub struct UnpackDllArgs {
 }
 
 /// 'start' 命令的参数
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Serialize, Deserialize, Clone)]
 pub struct StartArgs {
     /// 指定输入设备的索引
     #[arg(short, long)]
@@ -56,11 +63,11 @@ pub struct StartArgs {
 
     /// 开始加速并执行命令或外部程序
     #[arg(long)]
-    pub exec: Option<String>,
+    pub exec: Option<PathBuf>,
 }
 
 /// 这个命令组合了 'unpack-dll' 和 'start' 的所有参数。
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Serialize, Deserialize, Clone)]
 pub struct UnpackAndStartArgs {
     /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
     #[arg(long)]

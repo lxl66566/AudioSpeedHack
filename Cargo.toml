@@ -13,15 +13,18 @@ version     = "0.1.0"
 [dependencies]
 anyhow            = "1.0.75"
 clap              = { version = "4.5.50", features = ["derive"] }
+config-file2 = "0.4.1"
 cpal              = "0.16"
 include_assets    = { version = "1.0.0", default-features = false, features = ["zstd"] }
 log               = "0.4.28"
 pitch_shift       = "1.0.0"
 pretty_env_logger = "0.5.0"
 ringbuf           = "0.3"
+serde = "1.0.228"
 strum             = "0.27"
 strum_macros      = "0.27"
 terminal-menu     = "3.1.0"
+winreg = "0.55.0"
 
 [patch.crates-io]
 pitch_shift = { path = "./pitch_shift" }

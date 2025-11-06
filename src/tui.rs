@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 
 use anyhow::{Context, Result};
 use cpal::traits::{DeviceTrait, HostTrait};
@@ -98,7 +98,7 @@ pub fn run_tui() -> Result<Cli> {
             let exec = if exec_selection == NONE_EXEC_ITEM {
                 None
             } else {
-                Some(exec_selection.to_string())
+                Some(PathBuf::from(exec_selection))
             };
 
             Ok(Commands::Start(StartArgs {
