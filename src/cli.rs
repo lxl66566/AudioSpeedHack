@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use clap::{Args, Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 
+use crate::utils::SupportedDLLs;
+
 /// 基于 dsound 的游戏音频加速器
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -37,6 +39,10 @@ pub enum Commands {
 /// 'unpack-dll' 命令的参数
 #[derive(Args, Debug, Serialize, Deserialize, Clone)]
 pub struct UnpackDllArgs {
+    /// 指定解压的 DLL 类型，未指定则全部解压
+    #[arg(short, long)]
+    pub dll: Option<SupportedDLLs>,
+
     /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
     #[arg(long)]
     pub win64: bool,
@@ -69,6 +75,10 @@ pub struct StartArgs {
 /// 这个命令组合了 'unpack-dll' 和 'start' 的所有参数。
 #[derive(Args, Debug, Serialize, Deserialize, Clone)]
 pub struct UnpackAndStartArgs {
+    /// 指定解压的 DLL 类型，未指定则全部解压
+    #[arg(short, long)]
+    pub dll: Option<SupportedDLLs>,
+
     /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
     #[arg(long)]
     pub win64: bool,

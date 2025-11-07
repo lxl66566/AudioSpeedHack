@@ -1,7 +1,6 @@
 use std::io;
-use winreg::RegKey;
-use winreg::RegValue;
-use winreg::enums::*;
+
+use winreg::{RegKey, RegValue, enums::*};
 
 /// 定义要执行的注册表操作
 pub enum RegistryOperation<'a> {

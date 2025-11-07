@@ -38,15 +38,16 @@ impl<'a> Drop for PauseGuard<'a> {
 }
 
 fn main() -> anyhow::Result<()> {
-    // let my_dll_path = r#"C:\game\MMDevAPI.dll"#;
-    // let add_operation = RegistryOperation::Add {
+    // let my_dll_path = r#"MMDevAPI.dll"#;
+    // let add_operation = reg::RegistryOperation::Add {
     //     dll_path: my_dll_path,
     // };
 
-    // if let Err(e) = mmdevapi_registry_op(&add_operation) {
+    // if let Err(e) = reg::mmdevapi_registry_op(&add_operation) {
     //     eprintln!("添加注册表项时发生错误: {}", e);
     //     eprintln!("请检查路径是否正确以及是否具有相应的权限。");
     // }
+    // std::process::exit(0);
     log::log_init();
 
     let cli = if std::env::args().len() > 1 {
@@ -74,9 +75,9 @@ fn main() -> anyhow::Result<()> {
             } else {
                 utils::System::Win32
             };
-            let dlls = asset::extract_selected_assets(system, args.speed, env::current_dir()?)?;
-            GLOBAL_CACHE.lock().unwrap().extend_dlls(dlls)?;
-            info!("所有 dll 已解压到当前目录。");
+            let extracted =
+                asset::extract_selected_and_reg(args.dll, system, args.speed, env::current_dir()?)?;
+            GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
         }
         Commands::Start(args) => {
             let mut device_manager = DeviceManager::default();
@@ -90,12 +91,15 @@ fn main() -> anyhow::Result<()> {
             clean()?;
         }
         Commands::UnpackAndStart(args) => {
-            let extracted = asset::extract_selected_assets(
-                utils::System::Win32,
-                args.speed,
-                env::current_dir()?,
-            )?;
-            info!("extracted files: {extracted:?}");
+            let system = if args.win64 {
+                utils::System::Win64
+            } else {
+                utils::System::Win32
+            };
+            let extracted =
+                asset::extract_selected_and_reg(args.dll, system, args.speed, env::current_dir()?)?;
+            GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
+
             let mut device_manager = DeviceManager::default();
             device_manager.select_device(DeviceType::Input, args.input_device)?;
             device_manager.select_device(DeviceType::Output, args.output_device)?;

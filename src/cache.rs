@@ -1,13 +1,15 @@
-use crate::{cli::Commands, reg};
-use anyhow::Result;
-use config_file2::{LoadConfigFile, Storable};
-use log::warn;
-use serde::{Deserialize, Serialize};
 use std::{
     fs,
     path::{Path, PathBuf},
     sync::{LazyLock as Lazy, Mutex},
 };
+
+use anyhow::Result;
+use config_file2::{LoadConfigFile, Storable};
+use log::{info, warn};
+use serde::{Deserialize, Serialize};
+
+use crate::{cli::Commands, reg};
 
 const DEFAULT_CACHE_PATH: &str = "cache.toml";
 pub static GLOBAL_CACHE: Lazy<Mutex<Cache>> = Lazy::new(|| {
@@ -41,6 +43,7 @@ impl Cache {
                     }
                     return Err(e.into());
                 }
+                info!("成功删除文件：{dll:?}");
             }
             dlls.clear();
             self.store()?;

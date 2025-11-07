@@ -52,6 +52,7 @@ pub fn run_tui() -> Result<Cli> {
         ),
         submenu("UnpackDll (解压DLL)", unpack_dll_menu()),
         button("ListDevices (列出设备)"),
+        button("Clean (清除 AudioSpeedHack 残留)"),
         button("Exit (退出)"),
     ]);
 
@@ -66,12 +67,14 @@ pub fn run_tui() -> Result<Cli> {
     let chosen_command_name = tmp.selected_item_name();
     let command = match chosen_command_name {
         "ListDevices (列出设备)" => anyhow::Ok(Commands::ListDevices),
+        "Clean (清除 AudioSpeedHack 残留)" => anyhow::Ok(Commands::Clean),
         "UnpackDll (解压DLL)" => {
             let sub_menu = tmp.get_submenu("UnpackDll (解压DLL)");
             if sub_menu.canceled() {
                 anyhow::bail!("用户在 UnpackDll 菜单中取消了操作。");
             }
             Ok(Commands::UnpackDll(UnpackDllArgs {
+                dll: None,
                 win64: sub_menu.selection_value("选择平台") == "win64",
                 speed: sub_menu.selection_value("选择速度").parse()?,
             }))
@@ -134,6 +137,7 @@ pub fn run_tui() -> Result<Cli> {
             };
 
             Ok(Commands::UnpackAndStart(UnpackAndStartArgs {
+                dll: None,
                 win64: sub_menu.selection_value("选择平台") == "win64",
                 input_device: input_device_index,
                 output_device: output_device_index,
