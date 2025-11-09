@@ -1,6 +1,8 @@
 # AudioSpeedHack
 
-一个实用工具，用于**加速所有基于 dsound.dll 的游戏音频**。
+背景：[SPEED UP!](https://absx.pages.dev/articles/speedup.html)
+
+一个实用工具，**基于 dll 注入加速 galgame 音频**。
 
 ## 用法
 
@@ -20,12 +22,14 @@
 
 本项目的音频加速本质上是让程序加载修改后的 DLL，对音频**先加速升调，再降调**得到的。
 
-1.  **音频拦截与加速**：本工具内置了 [dsoal](https://github.com/lxl66566/dsoal) 修改而来的 `dsound.dll` 文件。启动时，工具根据选择的加速倍率，将一些 DLL 释放到游戏根目录。当游戏运行时，它会加载自定义的 `dsound.dll` 而非系统默认 DLL。此 DLL 会强制加速音频缓冲区处理，从而提高音频播放速度，但副作用是音调也会随之升高。
+1.  **音频拦截与加速**：本工具内置了一批修改后的 DLL 文件。启动时，工具根据选择的加速倍率，将这些 DLL 释放到游戏根目录，可能还会修改注册表。当游戏运行时，游戏优先加载修改后的 DLL 而非系统默认 DLL。此 DLL 会强制加速音频缓冲区处理，从而提高音频播放速度，但副作用是音调也会随之升高。目前注入了这些 DLL：
+    - dsound.dll：由 [dsoal](https://github.com/lxl66566/dsoal) 修改而来。
+    - MMDevAPI.dll：dll wrapper。
 2.  **音高实时校正**：为了解决音调升高的问题，游戏的高音调音频会通过 [VB-CABLE Virtual Audio Device](https://vb-audio.com/Cable/) 输出。AudioSpeedHack 主程序会捕获来自虚拟声卡的音频流，对其进行实时的音高修正（降调），最后将正常音高、加速后的音频输出到播放设备上。
 
 ## 问题排查
 
-### 如何判断当前游戏是否使用 dsound.dll？
+### 如何判断当前游戏是否使用支持的 dll？
 
 可以使用微软官方的 [Process Monitor](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon) 工具来检查。
 
@@ -33,25 +37,34 @@
 2.  启动您的游戏，并确保游戏已经播放了一段音频。
 3.  切换到 Process Monitor 窗口，点击工具栏上的“漏斗”图标 (Filter) 打开筛选器。
 4.  添加筛选规则：
-    - `Path` contains `dsound.dll`
-5.  查看结果列表。如果能找到匹配的条目，并且 Process Name 是游戏相关进程，其 Path 指向的是游戏目录下的 `dsound.dll`，则证明此工具适用。
+    - `Process Name` is `你的游戏 exe`
+    - `Path` contains `dsound`
+    - `Path` contains `mmdevapi`
+5.  查看结果列表。如果能找到匹配的条目，则说明此工具很可能适用（但是有例外）。
+
+## 成功实现加速的游戏
+
+> 默认于 Windows 11 系统上测试
+
+### dsound.dll
+
+- 春音 Alice＊Gram
+- 白恋 Sakura＊Gram
+- Deep One -ディープワン
+
+### MMDevAPI.dll
+
+- 魔法少女的魔女审判
 
 ## TODO
 
 本工具还处于极为原始的阶段，欢迎任何形式的贡献（Issue/PR）。
 
 - [ ] **支持其他音频 API**
-  - [ ] MMDevAPI
+  - [x] MMDevAPI
   - [ ] xaudio2
+  - [ ] winmm
 - [ ] 音质改善
-- [ ] 傻瓜式判断游戏是否使用 dsound.dll
-- [ ] 注入而非预编译，或者减小 dll 体积
+- [ ] 傻瓜式判断游戏加载的音频 dll
+- [ ] dsound.dll：注入而非预编译，或者减小 dll 体积
 - [ ] 更好的 TUI 界面，或 GUI
-
-## Tested On
-
-Windows 11
-
-- 春音 Alice＊Gram
-- 白恋 Sakura＊Gram
-- Deep One -ディープワン
