@@ -15,7 +15,9 @@ jobs:
       SCCACHE_GHA_ENABLED: "true"
       RUSTC_WRAPPER: "sccache"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
       - uses: cargo-bins/cargo-binstall@main
       - run: cargo binstall -y --no-symlinks cargo-nextest
       - name: Setup sccache-cache
