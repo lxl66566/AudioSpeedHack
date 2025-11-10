@@ -79,7 +79,7 @@ pub struct UnpackAndStartArgs {
     #[arg(short, long)]
     pub dll: Option<SupportedDLLs>,
 
-    /// 指定解压 x86 平台的 DLL (若不指定，则默认为 x64)
+    /// 指定解默压 x86 平台的 DLL (若不指定，则认为 Auto/x64)
     #[arg(long)]
     pub x86: bool,
 

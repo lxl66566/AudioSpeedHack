@@ -9,7 +9,7 @@ pub mod utils;
 
 use std::{env, process};
 
-use ::log::info;
+use ::log::{error, info};
 use anyhow::Result;
 use clap::Parser;
 use config_file2::Storable;
@@ -90,9 +90,19 @@ fn main() -> anyhow::Result<()> {
             clean()?;
         }
         Commands::UnpackAndStart(args) => {
+            let exec_arch = args
+                .exec
+                .as_ref()
+                .filter(|ex| ex.to_ascii_lowercase().ends_with(".exe"))
+                .map(|exec_ref| {
+                    utils::System::detect(exec_ref).unwrap_or_else(|e| {
+                        error!("自动检测架构失败: {e:?}，回退到 x64");
+                        utils::System::X64
+                    })
+                });
             let extracted = asset::extract_selected_and_reg(
                 args.dll,
-                args.x86.into(),
+                exec_arch.unwrap_or(args.x86.into()),
                 args.speed,
                 env::current_dir()?,
             )?;

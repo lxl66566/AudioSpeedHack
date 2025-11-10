@@ -183,7 +183,7 @@ fn unpack_and_start_menu<'a>(
 ) -> Vec<TerminalMenuItem> {
     vec![
         label("配置 UnpackAndStart 命令参数"),
-        list("选择架构", vec!["x64", "x86"]),
+        list("选择架构", vec!["Auto/x64", "x86"]),
         list("选择输入设备", input_devices.to_vec()),
         list("选择输出设备", output_devices.to_vec()),
         list("选择速度", speed_options()),

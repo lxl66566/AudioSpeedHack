@@ -1,4 +1,8 @@
+use std::{fs, path::Path};
+
+use anyhow::Result;
 use clap::ValueEnum;
+use goblin::pe::PE;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, EnumString};
 
@@ -24,6 +28,18 @@ impl From<bool> for System {
     /// from arg bool: default is x64, if true, then x86
     fn from(value: bool) -> Self {
         if value { System::X86 } else { System::X64 }
+    }
+}
+
+impl System {
+    pub fn detect(path: impl AsRef<Path>) -> Result<Self> {
+        let buf = fs::read(path)?;
+        let res = PE::parse(&buf)?;
+        if res.is_64 {
+            Ok(Self::X64)
+        } else {
+            Ok(Self::X86)
+        }
     }
 }
 
