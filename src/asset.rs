@@ -37,7 +37,7 @@ pub fn extract_dsound_assets(
     let aldrv_bytes = dsound_archive
         .get(format!("dsoal-aldrv-{}.dll", system).as_str())
         .unwrap();
-    let dsound_bytes = dsound_archive
+    let dsound_bytes: &[u8] = dsound_archive
         .get(format!("dsound-{}-{:.1}.dll", system, speed).as_str())
         .unwrap();
 
@@ -81,7 +81,7 @@ pub fn extract_mmdevapi_assets(
     let mm_archive = NamedArchive::load(include_dir!("assets/MMDevAPI"));
 
     let mm_bytes = mm_archive
-        .get(format!("{}-{}-{:.1}.dll", "MMDevAPI", system.to_arch(), speed).as_str())
+        .get(format!("{}-{}-{:.1}.dll", "MMDevAPI", system, speed).as_str())
         .unwrap();
     let mm_dest = dest.as_ref().join(MMDEVAPI_DLL_NAME);
     let mut ret = vec![];

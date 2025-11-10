@@ -70,13 +70,12 @@ fn main() -> anyhow::Result<()> {
             DeviceManager::default().list_all_devices()?;
         }
         Commands::UnpackDll(args) => {
-            let system = if args.win64 {
-                utils::System::Win64
-            } else {
-                utils::System::Win32
-            };
-            let extracted =
-                asset::extract_selected_and_reg(args.dll, system, args.speed, env::current_dir()?)?;
+            let extracted = asset::extract_selected_and_reg(
+                args.dll,
+                args.x86.into(),
+                args.speed,
+                env::current_dir()?,
+            )?;
             GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
         }
         Commands::Start(args) => {
@@ -91,13 +90,12 @@ fn main() -> anyhow::Result<()> {
             clean()?;
         }
         Commands::UnpackAndStart(args) => {
-            let system = if args.win64 {
-                utils::System::Win64
-            } else {
-                utils::System::Win32
-            };
-            let extracted =
-                asset::extract_selected_and_reg(args.dll, system, args.speed, env::current_dir()?)?;
+            let extracted = asset::extract_selected_and_reg(
+                args.dll,
+                args.x86.into(),
+                args.speed,
+                env::current_dir()?,
+            )?;
             GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
 
             let mut device_manager = DeviceManager::default();

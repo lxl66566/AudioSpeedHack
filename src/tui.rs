@@ -25,10 +25,6 @@ fn get_device_names(device_type: DeviceType) -> Result<Vec<String>> {
         })
         .collect::<Vec<_>>();
 
-    if names.is_empty() {
-        anyhow::bail!("未找到可用的音频{}设备。", device_type);
-    }
-
     Ok(names)
 }
 
@@ -75,7 +71,7 @@ pub fn run_tui() -> Result<Cli> {
             }
             Ok(Commands::UnpackDll(UnpackDllArgs {
                 dll: None,
-                win64: sub_menu.selection_value("选择平台") == "win64",
+                x86: sub_menu.selection_value("选择架构") == "x86",
                 speed: sub_menu.selection_value("选择速度").parse()?,
             }))
         }
@@ -138,7 +134,7 @@ pub fn run_tui() -> Result<Cli> {
 
             Ok(Commands::UnpackAndStart(UnpackAndStartArgs {
                 dll: None,
-                win64: sub_menu.selection_value("选择平台") == "win64",
+                x86: sub_menu.selection_value("选择架构") == "x86",
                 input_device: input_device_index,
                 output_device: output_device_index,
                 speed: sub_menu.selection_value("选择速度").parse()?,
@@ -155,7 +151,7 @@ pub fn run_tui() -> Result<Cli> {
 fn unpack_dll_menu() -> Vec<TerminalMenuItem> {
     vec![
         label("配置 UnpackDll 命令参数"),
-        list("选择平台", vec!["win32", "win64"]),
+        list("选择架构", vec!["x64", "x86"]),
         list("选择速度", speed_options()),
         button("确认！"),
         back_button("Back (返回)"),
@@ -187,7 +183,7 @@ fn unpack_and_start_menu<'a>(
 ) -> Vec<TerminalMenuItem> {
     vec![
         label("配置 UnpackAndStart 命令参数"),
-        list("选择平台", vec!["win32", "win64"]),
+        list("选择架构", vec!["x64", "x86"]),
         list("选择输入设备", input_devices.to_vec()),
         list("选择输出设备", output_devices.to_vec()),
         list("选择速度", speed_options()),

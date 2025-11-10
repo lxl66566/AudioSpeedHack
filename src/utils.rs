@@ -16,16 +16,14 @@ pub enum SupportedDLLs {
 #[derive(Debug, Clone, Copy, Display, EnumString)]
 #[strum(serialize_all = "lowercase")]
 pub enum System {
-    Win32,
-    Win64,
+    X64,
+    X86,
 }
 
-impl System {
-    pub fn to_arch(&self) -> &'static str {
-        match self {
-            System::Win32 => "x86",
-            System::Win64 => "x64",
-        }
+impl From<bool> for System {
+    /// from arg bool: default is x64, if true, then x86
+    fn from(value: bool) -> Self {
+        if value { System::X86 } else { System::X64 }
     }
 }
 

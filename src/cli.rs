@@ -43,9 +43,9 @@ pub struct UnpackDllArgs {
     #[arg(short, long)]
     pub dll: Option<SupportedDLLs>,
 
-    /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
+    /// 指定解压 x86 平台的 DLL (若不指定，则默认为 x64)
     #[arg(long)]
-    pub win64: bool,
+    pub x86: bool,
 
     /// 设置速度参数 (范围: 1.0 ~ 2.5)
     #[arg(short, long, value_parser = validate_speed)]
@@ -79,9 +79,9 @@ pub struct UnpackAndStartArgs {
     #[arg(short, long)]
     pub dll: Option<SupportedDLLs>,
 
-    /// 指定解压 win64 平台的 DLL (若不指定，则默认为 win32)
+    /// 指定解压 x86 平台的 DLL (若不指定，则默认为 x64)
     #[arg(long)]
-    pub win64: bool,
+    pub x86: bool,
 
     /// 指定输入设备的索引
     #[arg(short, long)]

@@ -10,7 +10,7 @@
 2. 从 [Github Releases](https://github.com/lxl66566/AudioSpeedHack/releases) 下载最新的压缩包，解压后放到游戏所在目录。
 3. 选择音频输出设备为 _CABLE Input (VB-Audio Virtual Cable)_。
 4. 双击执行进入 TUI 模式，选择 _解压并启动_：
-   1. 平台一般选择 win32 即可。
+   1. 选择游戏架构，x64 或 x86。
    2. 输入设备选择 _CABLE Output (VB-Audio Virtual Cable)_。
    3. 输出设备选择你的实际音频输出设备。
    4. 速度设为你想要的加速倍率。
@@ -48,13 +48,14 @@
 
 ### dsound.dll
 
-- 春音 Alice＊Gram
-- 白恋 Sakura＊Gram
-- Deep One -ディープワン
+- 春音 Alice＊Gram <span style="color: gray;">_x86_</span>
+- 白恋 Sakura＊Gram <span style="color: gray;">_x86_</span>
+- Deep One -ディープワン <span style="color: gray;">_x86_</span>
 
 ### MMDevAPI.dll
 
-- 魔法少女的魔女审判
+- 魔法少女的魔女审判 <span style="color: gray;">_x64_</span>
+- 传述之魔女 <span style="color: gray;">_x64_</span>
 
 ## TODO
 
