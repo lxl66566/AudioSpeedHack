@@ -6,7 +6,7 @@ use terminal_menu::{
     TerminalMenuItem, back_button, button, label, list, menu, mut_menu, run, submenu,
 };
 
-use crate::{cli::*, device::DeviceType};
+use crate::{cache::GLOBAL_CACHE, cli::*, device::DeviceType};
 
 const NONE_EXEC_ITEM: &str = "None";
 
@@ -34,9 +34,10 @@ pub fn run_tui() -> Result<Cli> {
     let input_devices = get_device_names(DeviceType::Input)?;
     let output_devices = get_device_names(DeviceType::Output)?;
     let executable_options = exec_options();
+    let prev_cli = GLOBAL_CACHE.lock().unwrap().last_command.clone();
 
     // 2. 构建菜单
-    let main_menu = menu(vec![
+    let mut main_menu_items = vec![
         label("请选择一个要执行的操作，按 q 退出:"),
         submenu(
             "UnpackAndStart (解压并启动)",
@@ -50,7 +51,11 @@ pub fn run_tui() -> Result<Cli> {
         button("ListDevices (列出设备)"),
         button("Clean (清除 AudioSpeedHack 残留)"),
         button("Exit (退出)"),
-    ]);
+    ];
+    if prev_cli.is_some() {
+        main_menu_items.insert(1, button("使用上次参数运行"));
+    }
+    let main_menu = menu(main_menu_items);
 
     run(&main_menu);
 
@@ -140,6 +145,11 @@ pub fn run_tui() -> Result<Cli> {
                 speed: sub_menu.selection_value("选择速度").parse()?,
                 exec,
             }))
+        }
+        "使用上次参数运行" => {
+            return Ok(Cli {
+                command: prev_cli.ok_or_else(|| anyhow::anyhow!("上次命令不存在"))?,
+            });
         }
         _ => anyhow::bail!("用户退出了程序。"),
     }?;

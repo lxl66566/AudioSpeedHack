@@ -21,7 +21,7 @@ pub static GLOBAL_CACHE: Lazy<Mutex<Cache>> = Lazy::new(|| {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Cache {
     #[serde(skip_serializing_if = "Option::is_none", default)]
-    last_command: Option<Commands>,
+    pub last_command: Option<Commands>,
     #[serde(skip_serializing_if = "Option::is_none")]
     dlls: Option<Vec<PathBuf>>,
 }
