@@ -1,7 +1,7 @@
 use std::io;
 
 use ::log::{error, info};
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use pitch_shift::PitchShifter;
 use ringbuf::HeapRb;
@@ -165,8 +165,10 @@ impl DeviceManager {
             .ok_or_else(|| anyhow::anyhow!("输出设备上未找到支持 f32 格式的配置"))?;
 
         // 使用输入设备的采样率来创建输出配置
-        let out_config: cpal::StreamConfig =
-            supported_out_configs.with_sample_rate(sample_rate).into();
+        let out_config: cpal::StreamConfig = supported_out_configs
+            .try_with_sample_rate(sample_rate)
+            .ok_or_else(|| anyhow!("sample rate out of range: {}", sample_rate.0))?
+            .into();
         let output_channels = out_config.channels as usize;
 
         info!("采样率: {} Hz", sample_rate.0);

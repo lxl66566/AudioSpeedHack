@@ -8,7 +8,7 @@
 
 1. 安装 [VB-CABLE](https://vb-audio.com/Cable/)：下载并解压，执行 VBCABLE_Setup_x64.exe，并点击 `Install Driver`。
 2. 从 [Github Releases](https://github.com/lxl66566/AudioSpeedHack/releases) 下载最新的压缩包，解压后放到游戏所在目录。
-3. 选择音频输出设备为 _CABLE Input (VB-Audio Virtual Cable)_。
+3. 选择 Windows 系统音频输出设备为 _CABLE Input (VB-Audio Virtual Cable)_。
 4. 双击执行进入 TUI 模式，选择 _解压并启动_：
    1. 游戏架构选择 `Auto/x64` 即可，程序会自动检测 exe 文件架构。(fallback x64)
    2. 输入设备选择 _CABLE Output (VB-Audio Virtual Cable)_。
@@ -48,13 +48,13 @@
 > 于 Windows 11 系统上测试
 
 <!-- prettier-ignore -->
-|游戏名|架构|DLL|
-|---|---|---|
-|春音 Alice＊Gram|x86|dsound.dll|
-|白恋 Sakura＊Gram|x86|dsound.dll|
-|Deep One -ディープワン|x86|dsound.dll|
-|魔法少女的魔女审判|x64|MMDevAPI.dll|
-|传述之魔女|x64|MMDevAPI.dll|
+|DLL|架构|引擎|游戏名|
+|---|---|---|---|
+|dsound.dll|x86|Kirikiri|春音 Alice＊Gram，白恋 Sakura＊Gram|
+|dsound.dll|x86|-|Deep One -ディープワン|
+|dsound.dll|x86|YU-RIS|猫忍之心 全系列|
+|MMDevAPI.dll|x64|Unity|魔法少女的魔女审判|
+|MMDevAPI.dll|x64|TyranoScript (electron)|传述之魔女|
 
 ## TODO
 
@@ -66,5 +66,5 @@
   - [ ] winmm
 - [ ] 音质改善
 - [ ] 傻瓜式判断游戏加载的音频 dll
-- [ ] dsound.dll：注入而非预编译，或者减小 dll 体积
+- [x] dsound.dll：注入而非预编译，或者**减小 dll 体积**
 - [ ] 更好的 TUI 界面，或 GUI
