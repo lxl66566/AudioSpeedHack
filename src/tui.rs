@@ -38,7 +38,12 @@ pub fn run_tui() -> Result<Cli> {
 
     // 2. 构建菜单
     let mut main_menu_items = vec![
-        label("请选择一个要执行的操作，按 q 退出:"),
+        label(concat!(
+            env!("CARGO_PKG_NAME"),
+            ": ",
+            env!("CARGO_PKG_REPOSITORY"),
+            "  请选择一个要执行的操作，按 q 退出:"
+        )),
         submenu(
             "UnpackAndStart (解压并启动)",
             unpack_and_start_menu(&input_devices, &output_devices, &executable_options),
@@ -75,7 +80,10 @@ pub fn run_tui() -> Result<Cli> {
                 anyhow::bail!("用户在 UnpackDll 菜单中取消了操作。");
             }
             Ok(Commands::UnpackDll(UnpackDllArgs {
-                dll: None,
+                dll: match sub_menu.selection_value("选择解压的 DLL") {
+                    "ALL" => None,
+                    spe => Some(spe.to_lowercase().parse().expect("TUI internal error")),
+                },
                 x86: sub_menu.selection_value("选择架构") == "x86",
                 speed: sub_menu.selection_value("选择速度").parse()?,
             }))
@@ -138,7 +146,10 @@ pub fn run_tui() -> Result<Cli> {
             };
 
             Ok(Commands::UnpackAndStart(UnpackAndStartArgs {
-                dll: None,
+                dll: match sub_menu.selection_value("选择解压的 DLL") {
+                    "ALL" => None,
+                    spe => Some(spe.to_lowercase().parse().expect("TUI internal error")),
+                },
                 x86: sub_menu.selection_value("选择架构") == "x86",
                 input_device: input_device_index,
                 output_device: output_device_index,
@@ -161,6 +172,7 @@ pub fn run_tui() -> Result<Cli> {
 fn unpack_dll_menu() -> Vec<TerminalMenuItem> {
     vec![
         label("配置 UnpackDll 命令参数"),
+        list("选择解压的 DLL", vec!["ALL", "dsound", "MMDevAPI"]),
         list("选择架构", vec!["x64", "x86"]),
         list("选择速度", speed_options()),
         button("确认！"),
@@ -193,6 +205,7 @@ fn unpack_and_start_menu<'a>(
 ) -> Vec<TerminalMenuItem> {
     vec![
         label("配置 UnpackAndStart 命令参数"),
+        list("选择解压的 DLL", vec!["ALL", "dsound", "MMDevAPI"]),
         list("选择架构", vec!["Auto/x64", "x86"]),
         list("选择输入设备", input_devices.to_vec()),
         list("选择输出设备", output_devices.to_vec()),

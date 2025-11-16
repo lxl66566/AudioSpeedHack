@@ -113,9 +113,7 @@ fn main() -> anyhow::Result<()> {
             device_manager.select_device(DeviceType::Output, args.output_device)?;
             let _child;
             if let Some(exec) = args.exec {
-                _child = process::Command::new(exec)
-                    .env("DSOAL_LOGFILE", "dsoal_error.txt")
-                    .spawn()?;
+                _child = process::Command::new(exec).spawn()?;
             }
             device_manager.run_process(args.speed)?;
             clean()?;

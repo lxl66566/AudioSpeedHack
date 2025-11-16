@@ -1,7 +1,7 @@
 [package]
 authors     = ["lxl66566 <lxl66566@gmail.com>"]
 categories  = ["command-line-utilities", "games", "multimedia::audio"]
-description = "Accelerate audio in dsound.dll-based games."
+description = "SPEED UP audio in galgames."
 edition     = "2024"
 keywords    = ["audio", "speed", "speedup", "dsound"]
 license     = "MIT"

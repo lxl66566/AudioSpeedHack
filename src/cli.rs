@@ -7,7 +7,7 @@ use crate::utils::SupportedDLLs;
 
 /// 基于 dsound 的游戏音频加速器
 #[derive(Parser, Debug)]
-#[command(author, version, about)]
+#[command(author, version, about = concat!(env!("CARGO_PKG_NAME"), ": ", env!("CARGO_PKG_DESCRIPTION"), "\nrepo: ", env!("CARGO_PKG_REPOSITORY")))]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
