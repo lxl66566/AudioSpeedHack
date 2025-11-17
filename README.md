@@ -69,5 +69,5 @@
   - [ ] xaudio2
   - [ ] winmm
 - [ ] **音质改善**
-- [x] dsound.dll：注入而非预编译，或者**减小 dll 体积**
+- [ ] dsound.dll：注入而非预编译，或者**减小 dll 体积**
 - [ ] 更好的 TUI 界面，或 GUI

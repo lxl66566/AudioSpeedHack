@@ -34,12 +34,22 @@ pub fn extract_dsound_assets(
     #[cfg(debug_assertions)]
     let dsound_archive = NamedArchive::load(include_dir!("assets/dsound"));
 
+    let aldrv_bytes = dsound_archive
+        .get(format!("dsoal-aldrv-{}.dll", system).as_str())
+        .unwrap();
     let dsound_bytes: &[u8] = dsound_archive
         .get(format!("dsound-{}-{:.1}.dll", system, speed).as_str())
         .unwrap();
 
+    let aldrv_dest = dest.as_ref().join("dsoal-aldrv.dll");
     let dsound_dest = dest.as_ref().join(DSOUND_DLL_NAME);
     let mut ret = vec![];
+
+    if !aldrv_dest.exists() {
+        ret.push(aldrv_dest.clone());
+    }
+    fs::write(aldrv_dest, aldrv_bytes)?;
+    info!("Extracted dsoal-aldrv.dll");
 
     if !dsound_dest.exists() {
         ret.push(dsound_dest.clone());
