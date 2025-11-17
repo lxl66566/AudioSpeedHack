@@ -27,6 +27,8 @@
 1.  **音频拦截与加速**：本工具内置了一批修改后的 DLL 文件。启动时，工具根据选择的加速倍率，将这些 DLL 释放到游戏根目录，可能还会修改注册表。当游戏运行时，游戏优先加载修改后的 DLL 而非系统默认 DLL。此 DLL 会强制加速音频缓冲区处理，从而提高音频播放速度，但副作用是音调也会随之升高。目前注入了这些 DLL：`dsound.dll`，`MMDevAPI.dll`。
 2.  **音高实时校正**：为了解决音调升高的问题，游戏的高音调音频会通过 [VB-CABLE Virtual Audio Device](https://vb-audio.com/Cable/) 输出。AudioSpeedHack 主程序会捕获来自虚拟声卡的音频流，对其进行实时的音高修正（降调），最后将正常音高、加速后的音频输出到播放设备上。
 
+dll 来源：[lxl66566/dsoal](https://github.com/lxl66566/dsoal), [lxl66566/SPEEDUP-dlls](https://github.com/lxl66566/SPEEDUP-dlls)
+
 ## 成功实现加速的游戏
 
 > 于 Windows 11 系统上测试
