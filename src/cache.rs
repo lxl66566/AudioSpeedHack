@@ -52,7 +52,7 @@ impl Cache {
     }
 
     pub fn clean_regs(&mut self) -> Result<()> {
-        reg::mmdevapi_registry_op(&reg::RegistryOperation::Delete)?;
+        reg::registry_op(&reg::RegistryOperation::Delete)?;
         Ok(())
     }
 

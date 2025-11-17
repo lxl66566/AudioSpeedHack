@@ -3,6 +3,7 @@ use std::{fs, path::Path};
 use anyhow::Result;
 use clap::ValueEnum;
 use goblin::pe::PE;
+use log::info;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, EnumString};
 
@@ -36,8 +37,10 @@ impl System {
         let buf = fs::read(path)?;
         let res = PE::parse(&buf)?;
         if res.is_64 {
+            info!("Detected x64 PE");
             Ok(Self::X64)
         } else {
+            info!("Detected x86 PE");
             Ok(Self::X86)
         }
     }

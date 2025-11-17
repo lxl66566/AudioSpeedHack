@@ -34,7 +34,6 @@ pub fn extract_dsound_assets(
     #[cfg(debug_assertions)]
     let dsound_archive = NamedArchive::load(include_dir!("assets/dsound"));
 
-
     let dsound_bytes: &[u8] = dsound_archive
         .get(format!("dsound-{}-{:.1}.dll", system, speed).as_str())
         .unwrap();
@@ -94,9 +93,7 @@ fn extract_specific_dll_and_reg(
     let ret = match dll {
         SupportedDLLs::DSound => extract_dsound_assets(system, speed, dest)?,
         SupportedDLLs::MMDevAPI => {
-            reg::mmdevapi_registry_op(&reg::RegistryOperation::Add {
-                dll_path: MMDEVAPI_DLL_NAME,
-            })?;
+            reg::registry_op(&reg::RegistryOperation::Add)?;
             extract_mmdevapi_assets(system, speed, dest)?
         }
     };

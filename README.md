@@ -37,8 +37,9 @@
 |dsound.dll|x86|Kirikiri|春音 Alice＊Gram，白恋 Sakura＊Gram|
 |dsound.dll|x86|Kirikiri|Deep One -ディープワン|
 |dsound.dll|x86|YU-RIS|猫忍之心 全系列|
-|MMDevAPI.dll|x64|Unity|魔法少女的魔女审判|
 |MMDevAPI.dll|x64|TyranoScript (electron)|传述之魔女|
+|MMDevAPI.dll|x64|Unity|魔法少女的魔女审判|
+|MMDevAPI.dll|x86|Silky Engine|ふゆから、くるる。|
 
 ## 问题排查
 
@@ -67,6 +68,6 @@
   - [x] MMDevAPI
   - [ ] xaudio2
   - [ ] winmm
-- [ ] 音质改善
+- [ ] **音质改善**
 - [x] dsound.dll：注入而非预编译，或者**减小 dll 体积**
 - [ ] 更好的 TUI 界面，或 GUI
