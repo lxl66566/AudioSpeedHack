@@ -78,7 +78,6 @@ pub fn registry_op(operation: &RegistryOperation) -> io::Result<()> {
         }
         RegistryOperation::Delete => {
             for item in REGISTRY_ITEMS.iter() {
-                info!("Removing registry: {:?}", item.full_path());
                 match item.remove_registry() {
                     Ok(_) => info!("registry removed: {:?}", item.full_path()),
                     Err(e) => log::warn!("failed to remove registry {:?}: {}", item.full_path(), e),
