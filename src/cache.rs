@@ -6,24 +6,39 @@ use std::{
 
 use anyhow::Result;
 use config_file2::{LoadConfigFile, Storable};
-use log::{info, warn};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{cli::Commands, reg};
+use crate::{
+    cli::{Commands, UnpackDllArgs},
+    reg,
+};
 
 const DEFAULT_CACHE_PATH: &str = "cache.toml";
 pub static GLOBAL_CACHE: Lazy<Mutex<Cache>> = Lazy::new(|| {
     Cache::load_or_default(DEFAULT_CACHE_PATH)
-        .expect("读取缓存文件失败")
+        .unwrap_or_else(|e| {
+            error!("Failed to load cache: {e:?}, use default.");
+            Cache::default()
+        })
         .into()
 });
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Cache {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub last_command: Option<Commands>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    dlls: Option<Vec<PathBuf>>,
+    dll_paths: Option<Vec<PathBuf>>,
+}
+
+impl Default for Cache {
+    fn default() -> Self {
+        Self {
+            last_command: None,
+            dll_paths: Some(vec!["SPEEDUP_announcement.txt".into()]),
+        }
+    }
 }
 
 impl Storable for Cache {
@@ -34,7 +49,7 @@ impl Storable for Cache {
 
 impl Cache {
     pub fn clean_dlls(&mut self) -> Result<()> {
-        if let Some(dlls) = self.dlls.as_mut() {
+        if let Some(dlls) = self.dll_paths.as_mut() {
             for dll in dlls.iter() {
                 if let Err(e) = std::fs::remove_file(dll) {
                     if e.kind() == std::io::ErrorKind::NotFound {
@@ -52,20 +67,30 @@ impl Cache {
     }
 
     pub fn clean_regs(&mut self) -> Result<()> {
-        reg::registry_op(&reg::RegistryOperation::Delete)?;
+        reg::registry_op(
+            &reg::RegistryOperation::Delete,
+            self.last_command.as_ref().and_then(|cmd| match cmd {
+                Commands::UnpackDll(UnpackDllArgs { dll: res, .. }) => *res,
+                _ => None,
+            }),
+        )?;
         Ok(())
     }
 
     pub fn extend_dlls(&mut self, newdlls: Vec<PathBuf>) -> Result<()> {
-        match self.dlls.as_mut() {
+        match self.dll_paths.as_mut() {
             Some(dlls) => dlls.extend(newdlls),
-            None => self.dlls = Some(newdlls),
+            None => self.dll_paths = Some(newdlls),
         }
         self.store()?;
         Ok(())
     }
 
     pub fn store_last_command(&mut self, cmd: Commands) -> Result<()> {
+        // 如果是 clean，则不存储
+        if matches!(cmd, Commands::Clean) {
+            return Ok(());
+        }
         self.last_command = Some(cmd);
         self.store()?;
         Ok(())
