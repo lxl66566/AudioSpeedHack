@@ -73,3 +73,11 @@ dll 来源：[lxl66566/dsoal](https://github.com/lxl66566/dsoal), [lxl66566/SPEE
 - [ ] **音质改善**
 - [ ] dsound.dll：注入而非预编译，或者**减小 dll 体积**
 - [ ] 更好的 TUI 界面，或 GUI
+
+## License
+
+AudioSpeedHack 本体遵循 MIT 协议。
+
+V0 源码中的 dsound.dll 来自 [dsoal fork](https://github.com/lxl66566/dsoal)，继承 GPLv2。
+
+V1 源码中的 DLL 文件，除 SoundTouch 外均禁止商用。
