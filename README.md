@@ -4,44 +4,51 @@
 
 一个 galgame 小工具，**基于 dll 注入 加速 galgame 音频**。
 
-## 基本用法
+## 基本用法（V1）
 
-1. 安装 [VB-CABLE](https://vb-audio.com/Cable/)：下载并解压，执行 VBCABLE_Setup_x64.exe，并点击 `Install Driver`。
-2. 从 [Github Releases](https://github.com/lxl66566/AudioSpeedHack/releases) 下载最新的压缩包，解压后放到游戏所在目录。
-3. 选择 Windows 系统音频输出设备为 _CABLE Input (VB-Audio Virtual Cable)_。
-4. 双击执行进入 TUI 模式，选择 _解压并启动_：
-   1. 解压的 DLL 选择 `ALL` 即可。
-   2. 游戏架构选择 `Auto/x64` 即可，程序会自动检测 exe 文件架构。(fallback x64)
-   3. 输入设备选择 _CABLE Output (VB-Audio Virtual Cable)_。
-   4. 输出设备选择你的实际音频输出设备。
-   5. 速度设为你想要的加速倍率。
-   6. 执行程序选择你的游戏 exe 文件。
-   7. 点击 _确认！_ 启动。
+1. 从 [Github Releases](https://github.com/lxl66566/AudioSpeedHack/releases) 下载最新的压缩包，解压后放到游戏所在目录。
+2. 双击执行进入 TUI 模式，选择 _UnpackDll (解压 DLL)_：
+   1. 解压的 DLL 一般选择 `ALL` 即可；有时候为了避免 DLL 互相影响，可能需要解压特定 DLL。
+   2. 游戏架构选择 `Auto/x64` 即可，程序支持自动检测 exe 文件架构。(fallback x64)
+   3. 速度设为你想要的加速倍率。
+   4. 执行程序选择你的游戏 exe 文件，以自动检测。
+   5. 最后点击 _确认！_，然后打开游戏即可。
 
 或者在命令行中执行 `AudioSpeedHack -h` 查看命令行用法。
-
-## 原理
-
-本项目的音频加速本质上是让程序加载修改后的 DLL，对音频**先加速升调，再降调**得到的。
-
-1.  **音频拦截与加速**：本工具内置了一批修改后的 DLL 文件。启动时，工具根据选择的加速倍率，将这些 DLL 释放到游戏根目录，可能还会修改注册表。当游戏运行时，游戏优先加载修改后的 DLL 而非系统默认 DLL。此 DLL 会强制加速音频缓冲区处理，从而提高音频播放速度，但副作用是音调也会随之升高。目前注入了这些 DLL：`dsound.dll`，`MMDevAPI.dll`。
-2.  **音高实时校正**：为了解决音调升高的问题，游戏的高音调音频会通过 [VB-CABLE Virtual Audio Device](https://vb-audio.com/Cable/) 输出。AudioSpeedHack 主程序会捕获来自虚拟声卡的音频流，对其进行实时的音高修正（降调），最后将正常音高、加速后的音频输出到播放设备上。
-
-dll 来源：[lxl66566/dsoal](https://github.com/lxl66566/dsoal), [lxl66566/SPEEDUP-dlls](https://github.com/lxl66566/SPEEDUP-dlls)
 
 ## 成功实现加速的游戏
 
 > 于 Windows 11 系统上测试
 
+<!-- 请按升序排列表格。 -->
 <!-- prettier-ignore -->
-|DLL|架构|引擎|游戏名|
-|---|---|---|---|
-|dsound.dll|x86|Kirikiri|春音 Alice＊Gram，白恋 Sakura＊Gram|
-|dsound.dll|x86|Kirikiri|Deep One -ディープワン|
-|dsound.dll|x86|YU-RIS|猫忍之心 全系列|
-|MMDevAPI.dll|x64|TyranoScript (electron)|传述之魔女|
-|MMDevAPI.dll|x64|Unity|魔法少女的魔女审判|
-|MMDevAPI.dll|x86|Silky Engine|ふゆから、くるる。|
+|DLL|架构|引擎|游戏名|可用版本|
+|---|---|---|---|---|
+|dsound.dll|x86|BGI|ジュエリー・ハーツ・アカデミア -We will wing wonder world-|ALL|
+|dsound.dll|x86|Kirikiri|春音 Alice＊Gram，白恋 Sakura＊Gram|ALL|
+|dsound.dll|x86|Kirikiri|Deep One -ディープワン|ALL|
+|dsound.dll|x86|YU-RIS|猫忍之心 全系列|ALL|
+|MMDevAPI.dll|x64|TyranoScript (electron)|传述之魔女|V0|
+|MMDevAPI.dll|x64|Unity|魔法少女的魔女审判|ALL|
+|MMDevAPI.dll|x86|Silky Engine|ふゆから、くるる。|V0|
+
+## 原理
+
+所有版本程序都能够注入 dsound.dll 和 MMDevAPI.dll。其中 dsound.dll 丢进游戏目录即可加载，而 MMDevAPI.dll 需要修改注册表才能加载。
+
+### V1
+
+V1 版本是对**音频数据本身直接处理**：通过伪造 Buffer Position，加速音频数据输出；并拦截获取到的音频数据，使用 SoundTouch WSOLA 进行不变调加速后，再交给声卡播放。
+
+目前 V1 版本仅在部分游戏可用，泛用性稍差；但是音频质量更好。
+
+### V0
+
+V0 版本是对音频**先加速升调，再降调**得到的，通过伪造采样率加速音频数据消耗，迫使程序更快输出，达到加速升调的效果；然后再通过 VB-CABLE 虚拟设备送到程序中，还原音高后输出。
+
+由于 V0 版本对 DLL 的修改较少，因此运行更加稳定，bug 更少；代价是音质较差，并且使用起来更加麻烦。
+
+使用 V0 版本，请[前往 Release](https://github.com/lxl66566/AudioSpeedHack/releases/tag/v0.2.1) 阅读该版本 README。
 
 ## 问题排查
 
@@ -58,20 +65,26 @@ dll 来源：[lxl66566/dsoal](https://github.com/lxl66566/dsoal), [lxl66566/SPEE
     - `Path` contains `mmdevapi`
 5.  查看结果列表。如果能找到匹配的条目，则说明此工具很可能适用。
 
+### 打开游戏没有听到任何声音
+
+1. 尝试使用 2.0 倍速的特定 DLL，而不是 ALL。
+2. 目前 V1 版本的 MMDevAPI 确实存在 bug；请尝试使用 V0。
+3. 提出 issue。
+
 ### 我使用特定 speed 时遇到一些问题
 
-并非所有速度都能够正常工作，有可能是 dll 内部限制（dsound 无法在 2.0 倍速以上工作 #2 ），或者是 dll wrapper 的 bug（MMDevAPI 2.3 倍速无声 #5 ）。请优先尝试 2.0 倍速以确认加速是否有效。若 2.0 倍速有效而某些其他倍速有问题，请提出 issue。
+并非所有速度都能够正常工作，有可能是 dll 内部限制（dsound 无法在 2.0 倍速以上工作 #2 ），或者是 dll wrapper 的 bug（V0 MMDevAPI 2.3 倍速无声 #5 ）。请优先尝试 2.0 倍速以确认加速是否有效。若 2.0 倍速有效而某些其他倍速有问题，请提出 issue。
 
 ## TODO
 
 本工具还处于极为原始的阶段，欢迎任何形式的贡献（Issue/PR）。
 
+- [ ] issue 区
 - [ ] **支持其他音频 API**
   - [x] MMDevAPI
   - [ ] xaudio2
   - [ ] winmm
-- [ ] **音质改善**
-- [ ] dsound.dll：注入而非预编译，或者**减小 dll 体积**
+- [x] **音质改善**
 - [ ] 更好的 TUI 界面，或 GUI
 
 ## License
