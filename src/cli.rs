@@ -15,25 +15,17 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug, Serialize, Deserialize, Clone)]
 pub enum Commands {
-    /// 列出所有可用的输入输出音频设备及其配置与索引
-    #[clap(alias = "l")]
-    ListDevices,
-
     /// 根据选择，解压相应的 DLL
     #[clap(alias = "u")]
     UnpackDll(UnpackDllArgs),
 
-    /// 启动音频处理程序
-    #[clap(alias = "s")]
-    Start(StartArgs),
-
-    /// 解压 DLL 并立即启动音频处理程序
-    #[clap(alias = "us")]
-    UnpackAndStart(UnpackAndStartArgs),
-
     /// 还原所有 AudioSpeedHack 所做的更改，包括注册表项和 DLL 文件
     #[clap(alias = "c")]
     Clean,
+
+    /// 检测并输出指定 exe 的架构
+    #[clap(alias = "d")]
+    Detect(DetectArgs),
 }
 
 /// 'unpack-dll' 命令的参数
@@ -50,54 +42,17 @@ pub struct UnpackDllArgs {
     /// 设置速度参数 (范围: 1.0 ~ 2.5)
     #[arg(short, long, value_parser = validate_speed)]
     pub speed: f32,
-}
 
-/// 'start' 命令的参数
-#[derive(Args, Debug, Serialize, Deserialize, Clone)]
-pub struct StartArgs {
-    /// 指定输入设备的索引
-    #[arg(short, long)]
-    pub input_device: usize,
-
-    /// 指定输出设备的索引
-    #[arg(short, long)]
-    pub output_device: usize,
-
-    /// 设置速度参数 (范围: 1.0 ~ 2.5)
-    #[arg(short, long, value_parser = validate_speed)]
-    pub speed: f32,
-
-    /// 开始加速并执行命令或外部程序
+    /// 开始加速并执行命令或外部程序。指定此项可以自动检测 x86 或 x64 架构。
     #[arg(long)]
     pub exec: Option<PathBuf>,
 }
 
-/// 这个命令组合了 'unpack-dll' 和 'start' 的所有参数。
+/// 'detect' 命令的参数
 #[derive(Args, Debug, Serialize, Deserialize, Clone)]
-pub struct UnpackAndStartArgs {
-    /// 指定解压的 DLL 类型，未指定则全部解压
-    #[arg(short, long)]
-    pub dll: Option<SupportedDLLs>,
-
-    /// 指定解默压 x86 平台的 DLL (若不指定，则认为 Auto/x64)
-    #[arg(long)]
-    pub x86: bool,
-
-    /// 指定输入设备的索引
-    #[arg(short, long)]
-    pub input_device: usize,
-
-    /// 指定输出设备的索引
-    #[arg(short, long)]
-    pub output_device: usize,
-
-    /// 设置速度参数 (范围: 1.0 ~ 2.5)
-    #[arg(short, long, value_parser = validate_speed)]
-    pub speed: f32,
-
-    /// 开始加速并执行命令或外部程序
-    #[arg(long)]
-    pub exec: Option<String>,
+pub struct DetectArgs {
+    /// 指定要检测的 exe 文件
+    pub exe: PathBuf,
 }
 
 /// 自定义验证函数，用于检查 speed 参数是否在 1.0 到 2.5 的范围内。

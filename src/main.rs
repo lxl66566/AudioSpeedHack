@@ -1,13 +1,12 @@
 pub mod asset;
 pub mod cache;
 pub mod cli;
-pub mod device;
 pub mod log;
 pub mod reg;
 pub mod tui;
 pub mod utils;
 
-use std::{env, process};
+use std::env;
 
 use ::log::{error, info};
 use anyhow::Result;
@@ -17,7 +16,6 @@ use config_file2::Storable;
 use crate::{
     cache::GLOBAL_CACHE,
     cli::{Cli, Commands},
-    device::{DeviceManager, DeviceType},
 };
 
 struct PauseGuard<'a> {
@@ -64,42 +62,15 @@ fn main() -> anyhow::Result<()> {
         .unwrap()
         .store_last_command(cli.command.clone())?;
 
+    let _pause_guard = PauseGuard::new("按任意键退出...");
     match cli.command {
-        Commands::ListDevices => {
-            let _pause_guard = PauseGuard::new("按任意键退出...");
-            DeviceManager::default().list_all_devices()?;
-        }
         Commands::UnpackDll(args) => {
-            let extracted = asset::extract_selected_and_reg(
-                args.dll,
-                args.x86.into(),
-                args.speed,
-                env::current_dir()?,
-            )?;
-            GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
-        }
-        Commands::Start(args) => {
-            let mut device_manager = DeviceManager::default();
-            device_manager.select_device(DeviceType::Input, args.input_device)?;
-            device_manager.select_device(DeviceType::Output, args.output_device)?;
-            let _child;
-            if let Some(exec) = args.exec {
-                _child = process::Command::new(exec).spawn()?;
-            }
-            device_manager.run_process(args.speed)?;
-            clean()?;
-        }
-        Commands::UnpackAndStart(args) => {
-            let exec_arch = args
-                .exec
-                .as_ref()
-                .filter(|ex| ex.to_ascii_lowercase().ends_with(".exe"))
-                .map(|exec_ref| {
-                    utils::System::detect(exec_ref).unwrap_or_else(|e| {
-                        error!("自动检测架构失败: {e:?}，回退到 x64");
-                        utils::System::X64
-                    })
-                });
+            let exec_arch = args.exec.as_ref().map(|exec_ref| {
+                utils::System::detect(exec_ref).unwrap_or_else(|e| {
+                    error!("自动检测架构失败: {e:?}，回退到 x64");
+                    utils::System::X64
+                })
+            });
             let extracted = asset::extract_selected_and_reg(
                 args.dll,
                 exec_arch.unwrap_or(args.x86.into()),
@@ -107,20 +78,17 @@ fn main() -> anyhow::Result<()> {
                 env::current_dir()?,
             )?;
             GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
-
-            let mut device_manager = DeviceManager::default();
-            device_manager.select_device(DeviceType::Input, args.input_device)?;
-            device_manager.select_device(DeviceType::Output, args.output_device)?;
-            let _child;
-            if let Some(exec) = args.exec {
-                _child = process::Command::new(exec).spawn()?;
-            }
-            device_manager.run_process(args.speed)?;
-            clean()?;
         }
         Commands::Clean => {
             clean()?;
             GLOBAL_CACHE.lock().unwrap().clean_self()?;
+        }
+        Commands::Detect(arg) => {
+            let arch_res = utils::System::detect(&arg.exe);
+            match arch_res {
+                Ok(arch) => println!("检测到架构为 {:?}", arch),
+                Err(e) => println!("检测失败：{:?}", e),
+            }
         }
     }
 
@@ -128,7 +96,6 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn clean() -> Result<()> {
-    let _pause_guard = PauseGuard::new("按任意键退出...");
     GLOBAL_CACHE.lock().unwrap().clean_dlls()?;
     GLOBAL_CACHE.lock().unwrap().clean_regs()?;
     GLOBAL_CACHE.lock().unwrap().store()?;
