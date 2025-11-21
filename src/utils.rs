@@ -7,6 +7,7 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter, EnumString};
 
+pub const SOUNDTOUCH_DLL_NAME: &str = "SoundTouch.dll";
 pub const DSOUND_DLL_NAME: &str = "dsound.dll";
 pub const MMDEVAPI_DLL_NAME: &str = "MMDevAPI.dll";
 
