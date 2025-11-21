@@ -1,10 +1,9 @@
-use std::io;
+use std::{io, sync::LazyLock as Lazy};
 
 use log::{self, info};
 use windows_registry_obj::{BaseKey, RegValueData, Registry};
 
-use crate::utils::MMDEVAPI_DLL_NAME;
-use std::sync::LazyLock as Lazy;
+use crate::utils::{MMDEVAPI_DLL_NAME, SupportedDLLs};
 
 /// 定义要执行的顶级注册表操作。
 pub enum RegistryOperation {
@@ -12,7 +11,7 @@ pub enum RegistryOperation {
     Delete,
 }
 
-static REGISTRY_ITEMS: Lazy<Vec<Registry<'static>>> = Lazy::new(|| {
+static MMDEVAPI_REGISTRY_ITEMS: Lazy<Vec<Registry<'static>>> = Lazy::new(|| {
     [
         BaseKey::CurrentUser
             .reg("SOFTWARE\\Classes\\CLSID\\{06CCA63E-9941-441B-B004-39F999ADA412}\\InprocServer32")
@@ -67,17 +66,25 @@ static REGISTRY_ITEMS: Lazy<Vec<Registry<'static>>> = Lazy::new(|| {
     ].to_vec()
 });
 
+fn reg_iter<'a>(which: Option<SupportedDLLs>) -> impl Iterator<Item = &'a Registry<'a>> {
+    match which {
+        Some(SupportedDLLs::MMDevAPI) => MMDEVAPI_REGISTRY_ITEMS.iter(),
+        Some(_) => [].iter(),
+        _ => MMDEVAPI_REGISTRY_ITEMS.iter(),
+    }
+}
+
 /// 主函数，执行注册表的添加或删除操作。
-pub fn registry_op(operation: &RegistryOperation) -> io::Result<()> {
+pub fn registry_op(operation: &RegistryOperation, which: Option<SupportedDLLs>) -> io::Result<()> {
     match operation {
         RegistryOperation::Add => {
-            for item in REGISTRY_ITEMS.iter() {
+            for item in reg_iter(which) {
                 item.set()?;
                 info!("registry created: {:?}", item.full_path());
             }
         }
         RegistryOperation::Delete => {
-            for item in REGISTRY_ITEMS.iter() {
+            for item in reg_iter(which) {
                 match item.remove_registry() {
                     Ok(_) => info!("registry removed: {:?}", item.full_path()),
                     Err(e) => log::warn!("failed to remove registry {:?}: {}", item.full_path(), e),

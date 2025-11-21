@@ -62,7 +62,7 @@ fn main() -> anyhow::Result<()> {
         .unwrap()
         .store_last_command(cli.command.clone())?;
 
-    let _pause_guard = PauseGuard::new("按任意键退出...");
+    let _pause_guard = PauseGuard::new("按任意键关闭窗口...");
     match cli.command {
         Commands::UnpackDll(args) => {
             let exec_arch = args.exec.as_ref().map(|exec_ref| {
@@ -78,6 +78,8 @@ fn main() -> anyhow::Result<()> {
                 env::current_dir()?,
             )?;
             GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
+            drop(PauseGuard::new("按任意键回滚更改并退出程序。"));
+            clean()?;
         }
         Commands::Clean => {
             clean()?;

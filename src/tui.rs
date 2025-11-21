@@ -110,8 +110,10 @@ fn exec_options() -> Vec<String> {
                     return false;
                 }
                 if let Some(ext) = e.path().extension().and_then(|e| e.to_str()) {
-                    return ["exe", "bat", "cmd", "ps1", "sh"]
-                        .contains(&ext.to_lowercase().as_str());
+                    return [
+                        "exe", //, "bat", "cmd", "ps1", "sh"
+                    ]
+                    .contains(&ext.to_lowercase().as_str());
                 }
                 false
             })

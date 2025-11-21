@@ -120,7 +120,7 @@ fn extract_specific_dll_and_reg(
         SupportedDLLs::DSound => extract_dsound_assets(system, speed, dest)?,
         SupportedDLLs::MMDevAPI => {
             let tmp = extract_mmdevapi_assets(system, speed, dest)?;
-            reg::registry_op(&reg::RegistryOperation::Add)?;
+            reg::registry_op(&reg::RegistryOperation::Add, Some(dll))?;
             tmp
         }
     };
