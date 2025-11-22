@@ -78,7 +78,9 @@ fn main() -> anyhow::Result<()> {
                 env::current_dir()?,
             )?;
             GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
-            drop(PauseGuard::new("按任意键回滚更改并退出程序。"));
+            drop(PauseGuard::new(
+                "按任意键回滚变更，并退出程序。请在关闭游戏后退出。",
+            ));
             clean()?;
         }
         Commands::Clean => {
@@ -100,6 +102,5 @@ fn main() -> anyhow::Result<()> {
 fn clean() -> Result<()> {
     GLOBAL_CACHE.lock().unwrap().clean_dlls()?;
     GLOBAL_CACHE.lock().unwrap().clean_regs()?;
-    GLOBAL_CACHE.lock().unwrap().store()?;
     Ok(())
 }

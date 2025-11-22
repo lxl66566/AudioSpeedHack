@@ -48,24 +48,28 @@ impl Storable for Cache {
 }
 
 impl Cache {
+    /// 清理所有 cache 中的 dll 文件，并避免在遇到错误时出现不一致状态
     pub fn clean_dlls(&mut self) -> Result<()> {
-        if let Some(dlls) = self.dll_paths.as_mut() {
-            for dll in dlls.iter() {
-                if let Err(e) = std::fs::remove_file(dll) {
-                    if e.kind() == std::io::ErrorKind::NotFound {
-                        warn!("文件 {dll:?} 不存在，跳过删除");
-                        continue;
-                    }
-                    return Err(e.into());
+        let mut dlls = self.dll_paths.take().unwrap_or_default();
+        let mut process_result = Ok(());
+        while let Some(dll) = dlls.pop() {
+            if let Err(e) = std::fs::remove_file(&dll) {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    warn!("文件 {dll:?} 不存在，跳过删除");
+                    continue;
                 }
-                info!("成功删除文件：{dll:?}");
+                dlls.push(dll);
+                process_result = Err(e.into());
+                break;
             }
-            dlls.clear();
-            self.store()?;
+            info!("成功删除文件：{dll:?}");
         }
-        Ok(())
+        self.dll_paths = Some(dlls);
+        self.store()?;
+        process_result
     }
 
+    /// 清理注册表项，注册表从 last command 里获取
     pub fn clean_regs(&mut self) -> Result<()> {
         reg::registry_op(
             &reg::RegistryOperation::Delete,

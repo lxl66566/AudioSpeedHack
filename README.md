@@ -30,6 +30,8 @@
 |dsound.dll|x86|YU-RIS|猫忍之心 全系列|ALL|
 |MMDevAPI.dll|x64|TyranoScript (electron)|传述之魔女|V0|
 |MMDevAPI.dll|x64|Unity|魔法少女的魔女审判|ALL|
+|MMDevAPI.dll|x64|LucaSystem|恋狱～月狂病～ FHD|V0|
+|MMDevAPI.dll|x86|QLIE|美少女万華鏡異聞 雪おんな|V0|
 |MMDevAPI.dll|x86|Silky Engine|ふゆから、くるる。|V0|
 
 ## 原理
@@ -67,7 +69,7 @@ V0 版本是对音频**先加速升调，再降调**得到的，通过伪造采�
 
 ### 打开游戏没有听到任何声音
 
-1. 尝试使用 2.0 倍速的特定 DLL，而不是 ALL。
+1. 尝试使用 2.0 倍速的特定 DLL，例如只使用 MMDevAPI，而不是 ALL。
 2. 目前 V1 版本的 MMDevAPI 确实存在 bug；请尝试使用 V0。
 3. 提出 issue。
 
@@ -79,8 +81,8 @@ V0 版本是对音频**先加速升调，再降调**得到的，通过伪造采�
 
 本工具还处于极为原始的阶段，欢迎任何形式的贡献（Issue/PR）。
 
-- [ ] issue 区
-- [ ] **支持其他音频 API**
+- [ ] [issue 区](https://github.com/lxl66566/AudioSpeedHack/issues)
+- [ ] 支持其他音频 API
   - [x] MMDevAPI
   - [ ] xaudio2
   - [ ] winmm
@@ -89,8 +91,8 @@ V0 版本是对音频**先加速升调，再降调**得到的，通过伪造采�
 
 ## License
 
-AudioSpeedHack 本体遵循 MIT 协议。
+AudioSpeedHack 的 Rust 本体遵循 MIT 协议。
 
-V0 源码中的 dsound.dll 来自 [dsoal fork](https://github.com/lxl66566/dsoal)，继承 GPLv2。
+V0 源码中的 dsound.dll 来自 [dsoal fork](https://github.com/lxl66566/dsoal)，继承 GPLv2。V0 的 MMDevAPI.dll 允许分发与商用。
 
-V1 源码中的 DLL 文件，除 SoundTouch 外均禁止商用。
+V1 源码中的 DLL 文件，除 SoundTouch 外均禁止未授权的商用。
