@@ -78,7 +78,7 @@ pub fn run_tui() -> Result<Cli> {
 fn unpack_dll_menu(executables: &[String]) -> Vec<TerminalMenuItem> {
     vec![
         label("配置 UnpackDll 命令参数"),
-        list("选择解压的 DLL", vec!["ALL", "dsound", "MMDevAPI"]),
+        list("选择解压的 DLL", vec!["MMDevAPI", "dsound", "ALL"]),
         list("选择架构", vec!["Auto/x64", "x86"]),
         list("选择速度", speed_options()),
         list("游戏 exe，用于检测架构 (可选)", executables.to_vec()),

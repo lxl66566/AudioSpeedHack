@@ -24,21 +24,12 @@ pub static GLOBAL_CACHE: Lazy<Mutex<Cache>> = Lazy::new(|| {
         .into()
 });
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Cache {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub last_command: Option<Commands>,
     #[serde(skip_serializing_if = "Option::is_none")]
     dll_paths: Option<Vec<PathBuf>>,
-}
-
-impl Default for Cache {
-    fn default() -> Self {
-        Self {
-            last_command: None,
-            dll_paths: Some(vec!["SPEEDUP_announcement.txt".into()]),
-        }
-    }
 }
 
 impl Storable for Cache {
@@ -51,6 +42,7 @@ impl Cache {
     /// 清理所有 cache 中的 dll 文件，并避免在遇到错误时出现不一致状态
     pub fn clean_dlls(&mut self) -> Result<()> {
         let mut dlls = self.dll_paths.take().unwrap_or_default();
+        dlls.push("SPEEDUP_announcement.txt".into());
         let mut process_result = Ok(());
         while let Some(dll) = dlls.pop() {
             if let Err(e) = std::fs::remove_file(&dll) {
