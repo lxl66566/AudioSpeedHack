@@ -30,11 +30,17 @@
 |dsound<br/>MMDevAPI|x86|BGI|[大图书馆的牧羊人](https://vndb.org/v8158)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|BGI|[ジュエリー・ハーツ・アカデミア -We will wing wonder world-](https://vndb.org/v33175)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|FVP|[五彩斑斓的世界](https://vndb.org/v5834)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|FVP|[樱花，萌放](https://vndb.org/v22313)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[死に逝く騎士、異世界に響く断末魔](https://vndb.org/v49274)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[Alice＊Gram](https://vndb.org/v19133)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[Deep One -ディープワン](https://vndb.org/v22499)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|MAGES. Engine|[Ever17](https://vndb.org/v19373)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Ren'Py|[Chaos;Head Noah](https://vndb.org/v22505)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|SiglusEngine|[虹彩都市](https://vndb.org/v48532)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Yaneurao|[まほ×ろば -Witches spiritual home-](https://vndb.org/v21455)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[猫忍之心](https://vndb.org/v45381)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[アンレス テルミナリア](https://vndb.org/v32757)|v1.1.0|
+|MMDevAPI|x64|Light.vn|[カタネガイ](https://vndb.org/v55892)|v1.1.0|
 |MMDevAPI|x64|LucaSystem|[恋狱～月狂病～ FHD](https://vndb.org/v515)|v1.1.0|
 |MMDevAPI|x64|TyranoScript (electron)|[传述之魔女](https://vndb.org/v32758)|v1.1.0|
 |MMDevAPI|x64|Unity|[魔法少女的魔女审判](https://vndb.org/v50283)|v1.1.0|
