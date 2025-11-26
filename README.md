@@ -29,6 +29,7 @@
 |dsound.dll<br/>MMDevAPI.dll|x86|BGI|ジュエリー・ハーツ・アカデミア -We will wing wonder world-|v1.1.0|
 |dsound.dll<br/>MMDevAPI.dll|x86|Kirikiri|春音 Alice＊Gram，白恋 Sakura＊Gram|v1.1.0|
 |dsound.dll<br/>MMDevAPI.dll|x86|Kirikiri|Deep One -ディープワン|v1.1.0|
+|dsound.dll<br/>MMDevAPI.dll|x86|Yaneurao|まほ×ろば|v1.1.0|
 |dsound.dll<br/>MMDevAPI.dll|x86|YU-RIS|猫忍之心（全系列）|v1.1.0|
 |MMDevAPI.dll|x64|LucaSystem|恋狱～月狂病～ FHD|v1.1.0|
 |MMDevAPI.dll|x64|TyranoScript (electron)|传述之魔女|v1.1.0|
