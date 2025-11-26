@@ -10,7 +10,9 @@ use strum::IntoEnumIterator;
 
 use crate::{
     reg,
-    utils::{self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, SOUNDTOUCH_DLL_NAME, SupportedDLLs},
+    utils::{
+        self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, SOUNDTOUCH_DLL_NAME, SPEED_MAX, SupportedDLLs,
+    },
 };
 
 pub fn extract_soundtouch_assets(
@@ -50,7 +52,7 @@ pub fn extract_dsound_assets(
     speed: f32,
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {
-    assert!((1.0..=2.5).contains(&speed));
+    assert!((1.0..=SPEED_MAX).contains(&speed));
 
     #[cfg(not(debug_assertions))]
     let dsound_archive = NamedArchive::load(include_dir!(
@@ -85,7 +87,7 @@ pub fn extract_mmdevapi_assets(
     speed: f32,
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {
-    assert!((1.0..=2.5).contains(&speed));
+    assert!((1.0..=SPEED_MAX).contains(&speed));
 
     #[cfg(not(debug_assertions))]
     let mm_archive = NamedArchive::load(include_dir!(

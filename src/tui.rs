@@ -5,7 +5,7 @@ use terminal_menu::{
     TerminalMenuItem, back_button, button, label, list, menu, mut_menu, run, submenu,
 };
 
-use crate::{cache::GLOBAL_CACHE, cli::*};
+use crate::{cache::GLOBAL_CACHE, cli::*, utils::SPEED_MAX};
 
 const NONE_EXEC_ITEM: &str = "None";
 
@@ -87,12 +87,15 @@ fn unpack_dll_menu(executables: &[String]) -> Vec<TerminalMenuItem> {
     ]
 }
 
-/// 生成速度选项 (1.0 ~ 2.5)
-fn speed_options() -> Vec<&'static str> {
-    vec![
-        "1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "2.0", "2.1", "2.2",
-        "2.3", "2.4", "2.5",
-    ]
+/// 生成速度选项 (1.0 ~ 2.0)
+fn speed_options() -> Vec<String> {
+    // 逻辑：从 10 迭代到 SPEED_MAX * 10 (例如 20)
+    let start = 10;
+    let end = (SPEED_MAX * 10.0) as i32;
+
+    (start..=end)
+        .map(|x| format!("{:.1}", x as f32 / 10.0))
+        .collect()
 }
 
 /// 获取当前目录下的文件和文件夹作为 `exec` 的选项

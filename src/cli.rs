@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{Args, Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::SupportedDLLs;
+use crate::utils::{SPEED_MAX, SupportedDLLs};
 
 /// 基于 dsound 的游戏音频加速器
 #[derive(Parser, Debug)]
@@ -39,7 +39,7 @@ pub struct UnpackDllArgs {
     #[arg(long)]
     pub x86: bool,
 
-    /// 设置速度参数 (范围: 1.0 ~ 2.5)
+    /// 设置速度参数 (范围: 1.0 ~ 2.0)
     #[arg(short, long, value_parser = validate_speed)]
     pub speed: f32,
 
@@ -55,7 +55,7 @@ pub struct DetectArgs {
     pub exe: PathBuf,
 }
 
-/// 自定义验证函数，用于检查 speed 参数是否在 1.0 到 2.5 的范围内。
+/// 自定义验证函数，用于检查 speed 参数是否在 1.0 到 2.0 的范围内。
 #[allow(unused)] // clap used
 fn validate_speed(s: &str) -> Result<f32, String> {
     // 尝试将输入字符串解析为 f32
@@ -64,11 +64,11 @@ fn validate_speed(s: &str) -> Result<f32, String> {
         .map_err(|_| format!("`{}` 不是一个有效的浮点数", s))?;
 
     // 检查解析出的值是否在范围内
-    if (1.0..=2.5).contains(&speed) {
+    if (1.0..=SPEED_MAX).contains(&speed) {
         Ok(speed)
     } else {
         Err(format!(
-            "速度参数必须在 1.0 到 2.5 的范围内，但输入的是 {}",
+            "速度参数必须在 1.0 到 2.0 的范围内，但输入的是 {}",
             speed
         ))
     }
