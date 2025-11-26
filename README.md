@@ -25,17 +25,24 @@
 <!-- prettier-ignore -->
 |DLL|架构|引擎|游戏名|测试版本|
 |---|---|---|---|---|
-|dsound.dll<br/>MMDevAPI.dll|x86|BGI|大图书馆的牧羊人（全系列）|v1.1.0|
-|dsound.dll<br/>MMDevAPI.dll|x86|BGI|ジュエリー・ハーツ・アカデミア -We will wing wonder world-|v1.1.0|
-|dsound.dll<br/>MMDevAPI.dll|x86|Kirikiri|春音 Alice＊Gram，白恋 Sakura＊Gram|v1.1.0|
-|dsound.dll<br/>MMDevAPI.dll|x86|Kirikiri|Deep One -ディープワン|v1.1.0|
-|dsound.dll<br/>MMDevAPI.dll|x86|Yaneurao|まほ×ろば|v1.1.0|
-|dsound.dll<br/>MMDevAPI.dll|x86|YU-RIS|猫忍之心（全系列）|v1.1.0|
-|MMDevAPI.dll|x64|LucaSystem|恋狱～月狂病～ FHD|v1.1.0|
-|MMDevAPI.dll|x64|TyranoScript (electron)|传述之魔女|v1.1.0|
-|MMDevAPI.dll|x64|Unity|魔法少女的魔女审判|v1.1.0|
-|MMDevAPI.dll|x86|QLIE|美少女万華鏡異聞 雪おんな|v1.1.0|
-|MMDevAPI.dll|x86|Silky Engine|ふゆから、くるる。|v1.1.0|
+|dsound<br/>MMDevAPI|x64|Artemis|[FLIP＊FLOP](https://vndb.org/v39197)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Artemis|[樱之刻](https://vndb.org/v20431)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|BGI|[大图书馆的牧羊人](https://vndb.org/v8158)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|BGI|[ジュエリー・ハーツ・アカデミア -We will wing wonder world-](https://vndb.org/v33175)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|FVP|[五彩斑斓的世界](https://vndb.org/v5834)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[Alice＊Gram](https://vndb.org/v19133)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[Deep One -ディープワン](https://vndb.org/v22499)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Yaneurao|[まほ×ろば -Witches spiritual home-](https://vndb.org/v21455)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|YU-RIS|[猫忍之心](https://vndb.org/v45381)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|YU-RIS|[アンレス テルミナリア](https://vndb.org/v32757)|v1.1.0|
+|MMDevAPI|x64|LucaSystem|[恋狱～月狂病～ FHD](https://vndb.org/v515)|v1.1.0|
+|MMDevAPI|x64|TyranoScript (electron)|[传述之魔女](https://vndb.org/v32758)|v1.1.0|
+|MMDevAPI|x64|Unity|[魔法少女的魔女审判](https://vndb.org/v50283)|v1.1.0|
+|MMDevAPI|x86|AliceSoft|[ランス03 リーザス陥落](https://vndb.org/v17642)|v1.1.0|
+|MMDevAPI|x86|AVG32|[AIR](https://vndb.org/v36)|v1.1.0|
+|MMDevAPI|x86|CatSystem2|[灰色的果实](https://vndb.org/v5154)|v1.1.0|
+|MMDevAPI|x86|QLIE|[美少女万華鏡異聞 雪おんな](https://vndb.org/v44184)|v1.1.0|
+|MMDevAPI|x86|Silky Engine|[ふゆから、くるる。](https://vndb.org/v30012)|v1.1.0|
 
 ## 原理
 
