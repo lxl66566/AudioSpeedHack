@@ -1,28 +1,36 @@
 use std::{fs, iter};
 
 use anyhow::Result;
+use once_fn::once;
 use terminal_menu::{
     TerminalMenuItem, back_button, button, label, list, menu, mut_menu, run, submenu,
 };
 
-use crate::{cache::GLOBAL_CACHE, cli::*, utils::SPEED_MAX};
+use crate::{
+    cache::GLOBAL_CACHE,
+    cli::*,
+    utils::{SPEED_MAX, SupportedDLLs},
+};
 
 const NONE_EXEC_ITEM: &str = "None";
 
 /// TUI 主函数，引导用户选择命令和参数，并返回一个完整的 Cli 对象
 pub fn run_tui() -> Result<Cli> {
-    let executable_options = exec_options();
     let prev_cli = GLOBAL_CACHE.lock().unwrap().last_command.clone();
 
     // 2. 构建菜单
     let mut main_menu_items = vec![
         label(concat!(
             env!("CARGO_PKG_NAME"),
-            ": ",
+            " (v",
+            env!("CARGO_PKG_VERSION"),
+            "): ",
             env!("CARGO_PKG_REPOSITORY"),
             "  请选择一个要执行的操作，按 q 退出:"
         )),
-        submenu("UnpackDll (解压DLL)", unpack_dll_menu(&executable_options)),
+        submenu("语音加速 (SPEEDUP)", speedup_menu()),
+        submenu("语音不中断 (ZeroInterrupt)", zerointerrupt_menu()),
+        submenu("检测架构", detect_menu()),
         button("Clean (清除 AudioSpeedHack 残留)"),
         button("Exit (退出)"),
     ];
@@ -42,10 +50,10 @@ pub fn run_tui() -> Result<Cli> {
     let chosen_command_name = tmp.selected_item_name();
     let command = match chosen_command_name {
         "Clean (清除 AudioSpeedHack 残留)" => anyhow::Ok(Commands::Clean),
-        "UnpackDll (解压DLL)" => {
-            let sub_menu = tmp.get_submenu("UnpackDll (解压DLL)");
+        "语音加速 (SPEEDUP)" => {
+            let sub_menu = tmp.get_submenu("语音加速 (SPEEDUP)");
             if sub_menu.canceled() {
-                anyhow::bail!("用户在 UnpackDll 菜单中取消了操作。");
+                anyhow::bail!("用户取消了操作。");
             }
             let exec_selection = sub_menu.selection_value("游戏 exe，用于检测架构 (可选)");
             let exec = if exec_selection == NONE_EXEC_ITEM {
@@ -67,6 +75,37 @@ pub fn run_tui() -> Result<Cli> {
                 exec,
             }))
         }
+        "语音不中断 (ZeroInterrupt)" => {
+            let sub_menu = tmp.get_submenu("语音不中断 (ZeroInterrupt)");
+            if sub_menu.canceled() {
+                anyhow::bail!("用户取消了操作。");
+            }
+            let exec_selection = sub_menu.selection_value("游戏 exe，用于检测架构 (可选)");
+            let exec = if exec_selection == NONE_EXEC_ITEM {
+                None
+            } else {
+                Some(exec_selection.into())
+            };
+            Ok(Commands::UnpackDll(UnpackDllArgs {
+                dll: Some(SupportedDLLs::DSoundZeroInterrupt),
+                x86: sub_menu.selection_value("选择架构") == "x86",
+                speed: None,
+                exec,
+            }))
+        }
+        "检测架构" => {
+            let sub_menu = tmp.get_submenu("检测架构");
+            if sub_menu.canceled() {
+                anyhow::bail!("用户取消了操作。");
+            }
+            let exec_selection = sub_menu.selection_value("游戏 exe，用于检测架构");
+            let exe = if exec_selection == NONE_EXEC_ITEM {
+                anyhow::bail!("未指定游戏 exe")
+            } else {
+                exec_selection.into()
+            };
+            Ok(Commands::Detect(DetectArgs { exe }))
+        }
         "使用上次参数运行" => {
             return Ok(Cli {
                 command: prev_cli.ok_or_else(|| anyhow::anyhow!("上次命令不存在"))?,
@@ -78,14 +117,34 @@ pub fn run_tui() -> Result<Cli> {
     Ok(Cli { command })
 }
 
-/// 'UnpackDll' 命令的子菜单
-fn unpack_dll_menu(executables: &[String]) -> Vec<TerminalMenuItem> {
+/// speedup 子菜单
+fn speedup_menu() -> Vec<TerminalMenuItem> {
     vec![
-        label("配置 UnpackDll 命令参数"),
+        label("配置 加速 参数"),
         list("选择解压的 DLL", vec!["MMDevAPI", "dsound", "ALL"]),
         list("选择架构", vec!["Auto/x64", "x86"]),
         list("选择速度", speed_options()),
-        list("游戏 exe，用于检测架构 (可选)", executables.to_vec()),
+        list("游戏 exe，用于检测架构 (可选)", exec_options()),
+        button("确认！"),
+        back_button("Back (返回)"),
+    ]
+}
+
+/// zerointerrupt 子菜单
+fn zerointerrupt_menu() -> Vec<TerminalMenuItem> {
+    vec![
+        label("配置 语音不中断 参数"),
+        list("选择架构", vec!["Auto/x64", "x86"]),
+        list("游戏 exe，用于检测架构 (可选)", exec_options()),
+        button("确认！"),
+        back_button("Back (返回)"),
+    ]
+}
+
+fn detect_menu() -> Vec<TerminalMenuItem> {
+    vec![
+        label("检测架构"),
+        list("游戏 exe，用于检测架构", exec_options()),
         button("确认！"),
         back_button("Back (返回)"),
     ]
@@ -103,6 +162,7 @@ fn speed_options() -> Vec<String> {
 }
 
 /// 获取当前目录下的文件和文件夹作为 `exec` 的选项
+#[once]
 fn exec_options() -> Vec<String> {
     let mut options = vec![NONE_EXEC_ITEM.to_string()]; // 提供不选择的选项
     if let Ok(entries) = fs::read_dir(".") {

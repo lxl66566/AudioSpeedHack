@@ -15,7 +15,7 @@ use clap::Parser;
 use crate::{
     cache::GLOBAL_CACHE,
     cli::{Cli, Commands},
-    utils::SPEEDUP_ENV_NAME,
+    utils::{SPEEDUP_ENV_NAME, SupportedDLLs},
 };
 
 struct PauseGuard<'a> {
@@ -61,12 +61,20 @@ fn main() -> anyhow::Result<()> {
                     utils::System::X64
                 })
             });
+
             let extracted = asset::extract_selected_and_reg(
                 args.dll,
                 exec_arch.unwrap_or(args.x86.into()),
                 env::current_dir()?,
             )?;
             GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
+            if matches!(args.dll, Some(SupportedDLLs::DSoundZeroInterrupt)) {
+                GLOBAL_CACHE
+                    .lock()
+                    .unwrap()
+                    .extend_env_vars(vec![SPEEDUP_ENV_NAME.to_string()])?;
+            }
+
             if let Some(speed) = args.speed {
                 windows_env::set(SPEEDUP_ENV_NAME, format!("{:.1}", speed))?;
                 info!("env SPEEDUP set to {speed:.1}");
@@ -91,5 +99,6 @@ fn main() -> anyhow::Result<()> {
 fn clean() -> Result<()> {
     GLOBAL_CACHE.lock().unwrap().clean_regs()?;
     GLOBAL_CACHE.lock().unwrap().clean_dlls()?;
+    GLOBAL_CACHE.lock().unwrap().clean_envs()?;
     Ok(())
 }

@@ -6,13 +6,10 @@ use std::{
 use anyhow::Result;
 use include_assets::{NamedArchive, include_dir};
 use log::info;
-use strum::IntoEnumIterator;
 
 use crate::{
     reg,
-    utils::{
-        self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, SOUNDTOUCH_DLL_NAME, SupportedDLLs,
-    },
+    utils::{self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, SOUNDTOUCH_DLL_NAME, SupportedDLLs},
 };
 
 pub fn extract_soundtouch_assets(
@@ -50,6 +47,7 @@ pub fn extract_soundtouch_assets(
 pub fn extract_dsound_assets(
     system: utils::System,
     dest: impl AsRef<Path>,
+    zerointerrupt: bool,
 ) -> Result<Vec<PathBuf>> {
     #[cfg(not(debug_assertions))]
     let dsound_archive = NamedArchive::load(include_dir!(
@@ -60,9 +58,13 @@ pub fn extract_dsound_assets(
     #[cfg(debug_assertions)]
     let dsound_archive = NamedArchive::load(include_dir!("assets/dsound"));
 
-    let dsound_bytes: &[u8] = dsound_archive
-        .get(format!("dsound-{}.dll", system).as_str())
-        .unwrap();
+    let dsound_src = if !zerointerrupt {
+        format!("dsound-{}.dll", system)
+    } else {
+        format!("dsound-zerointerrupt-{}.dll", system)
+    };
+
+    let dsound_bytes: &[u8] = dsound_archive.get(&dsound_src).unwrap();
 
     let dsound_dest = dest.as_ref().join(DSOUND_DLL_NAME);
     let mut ret = vec![];
@@ -112,7 +114,11 @@ fn extract_specific_dll_and_reg(
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {
     let ret = match dll {
-        SupportedDLLs::DSound => extract_dsound_assets(system, dest)?,
+        SupportedDLLs::DSound | SupportedDLLs::DSoundZeroInterrupt => extract_dsound_assets(
+            system,
+            dest,
+            matches!(dll, SupportedDLLs::DSoundZeroInterrupt),
+        )?,
         SupportedDLLs::MMDevAPI => {
             let tmp = extract_mmdevapi_assets(system, dest)?;
             reg::registry_op(&reg::RegistryOperation::Add, Some(dll))?;
@@ -122,7 +128,7 @@ fn extract_specific_dll_and_reg(
     Ok(ret)
 }
 
-/// 提取指定的 dll 到指定目录，如果为空，则提取全部 dll
+/// 提取指定的 dll 到指定目录，如果为空，则提取全部加速相关 dll
 /// 如果该 dll 对应了需要写入的注册表，则写入注册表
 ///
 /// # Returns
@@ -137,7 +143,7 @@ pub fn extract_selected_and_reg(
     if let Some(dll) = selected {
         ret.extend(extract_specific_dll_and_reg(dll, system, dest)?);
     } else {
-        for dll in SupportedDLLs::iter() {
+        for dll in [SupportedDLLs::DSound, SupportedDLLs::MMDevAPI] {
             ret.extend(extract_specific_dll_and_reg(dll, system, &dest)?);
         }
     }

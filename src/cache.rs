@@ -12,7 +12,6 @@ use serde::{Deserialize, Serialize};
 use crate::{
     cli::{Commands, UnpackDllArgs},
     reg,
-    utils::SPEEDUP_ENV_NAME,
 };
 
 const DEFAULT_CACHE_PATH: &str = "cache.toml";
@@ -31,6 +30,8 @@ pub struct Cache {
     pub last_command: Option<Commands>,
     #[serde(skip_serializing_if = "Option::is_none")]
     dll_paths: Option<Vec<PathBuf>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    env_vars: Option<Vec<String>>,
 }
 
 impl Storable for Cache {
@@ -74,15 +75,12 @@ impl Cache {
         Ok(())
     }
 
-    /// 清理 env SPEEDUP
+    /// 清理 env
     pub fn clean_envs(&mut self) -> Result<()> {
-        let res = self.last_command.as_ref().and_then(|cmd| match cmd {
-            Commands::UnpackDll(UnpackDllArgs { speed, .. }) => *speed,
-            _ => None,
-        });
-        if res.is_some() {
-            windows_env::remove(SPEEDUP_ENV_NAME)?;
-        }
+        let envs = self.env_vars.take().unwrap_or_default();
+        envs.iter()
+            .for_each(|env| windows_env::remove(env).unwrap());
+        self.store()?;
         Ok(())
     }
 
@@ -90,6 +88,15 @@ impl Cache {
         match self.dll_paths.as_mut() {
             Some(dlls) => dlls.extend(newdlls),
             None => self.dll_paths = Some(newdlls),
+        }
+        self.store()?;
+        Ok(())
+    }
+
+    pub fn extend_env_vars(&mut self, newenvs: Vec<String>) -> Result<()> {
+        match self.env_vars.as_mut() {
+            Some(envs) => envs.extend(newenvs),
+            None => self.env_vars = Some(newenvs),
         }
         self.store()?;
         Ok(())

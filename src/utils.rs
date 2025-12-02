@@ -20,6 +20,7 @@ pub const SPEEDUP_ENV_NAME: &str = "SPEEDUP";
 pub enum SupportedDLLs {
     DSound,
     MMDevAPI,
+    DSoundZeroInterrupt,
 }
 
 #[derive(Debug, Clone, Copy, Display, EnumString)]

@@ -7,7 +7,13 @@ use crate::utils::SupportedDLLs;
 
 /// 基于 dsound 的游戏音频加速器
 #[derive(Parser, Debug)]
-#[command(author, version, about = concat!(env!("CARGO_PKG_NAME"), ": ", env!("CARGO_PKG_DESCRIPTION"), "\nrepo: ", env!("CARGO_PKG_REPOSITORY")))]
+#[command(author, version, about = concat!(
+    env!("CARGO_PKG_NAME"),
+    " (v",
+    env!("CARGO_PKG_VERSION"),
+    "), repo: ",
+    env!("CARGO_PKG_REPOSITORY")
+))]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
@@ -19,7 +25,7 @@ pub enum Commands {
     #[clap(alias = "u")]
     UnpackDll(UnpackDllArgs),
 
-    /// 还原所有 AudioSpeedHack 所做的更改，包括注册表项和 DLL 文件
+    /// 还原所有 AudioSpeedHack 所做的更改，包括注册表项、DLL 文件和环境变量
     #[clap(alias = "c")]
     Clean,
 
@@ -31,7 +37,7 @@ pub enum Commands {
 /// 'unpack-dll' 命令的参数
 #[derive(Args, Debug, Serialize, Deserialize, Clone)]
 pub struct UnpackDllArgs {
-    /// 指定解压的 DLL 类型，未指定则全部解压
+    /// 指定解压的 DLL 类型，未指定则解压全部加速相关 DLL
     #[arg(short, long)]
     pub dll: Option<SupportedDLLs>,
 

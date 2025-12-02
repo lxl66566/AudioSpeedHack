@@ -12,6 +12,7 @@ dependencies = [
  "goblin",
  "include_assets",
  "log",
+ "once-fn",
  "pretty_env_logger",
  "serde",
  "strum",
@@ -534,6 +535,18 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "once-fn"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc3537c49574aefd7911d17ccf83d82a3c9642242b844c1641521d964fcc1d5a"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
