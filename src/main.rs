@@ -15,6 +15,7 @@ use clap::Parser;
 use crate::{
     cache::GLOBAL_CACHE,
     cli::{Cli, Commands},
+    utils::SPEEDUP_ENV_NAME,
 };
 
 struct PauseGuard<'a> {
@@ -63,10 +64,13 @@ fn main() -> anyhow::Result<()> {
             let extracted = asset::extract_selected_and_reg(
                 args.dll,
                 exec_arch.unwrap_or(args.x86.into()),
-                args.speed,
                 env::current_dir()?,
             )?;
             GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
+            if let Some(speed) = args.speed {
+                windows_env::set(SPEEDUP_ENV_NAME, format!("{:.1}", speed))?;
+                info!("env SPEEDUP set to {speed:.1}");
+            }
             drop(PauseGuard::new(
                 "DLL 解压成功，请自行启动游戏。游玩结束后，按 Enter 回滚变更，并退出程序。",
             ));

@@ -12,6 +12,7 @@ pub const SPEED_MAX: f32 = 2.0;
 pub const SOUNDTOUCH_DLL_NAME: &str = "SoundTouch.dll";
 pub const DSOUND_DLL_NAME: &str = "dsound.dll";
 pub const MMDEVAPI_DLL_NAME: &str = "MMDevAPI.dll";
+pub const SPEEDUP_ENV_NAME: &str = "SPEEDUP";
 
 #[derive(Debug, Clone, Copy, Display, ValueEnum, Serialize, Deserialize, EnumString, EnumIter)]
 #[strum(serialize_all = "lowercase")]

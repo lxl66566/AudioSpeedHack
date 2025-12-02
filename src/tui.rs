@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, iter};
 
 use anyhow::Result;
 use terminal_menu::{
@@ -53,13 +53,17 @@ pub fn run_tui() -> Result<Cli> {
             } else {
                 Some(exec_selection.into())
             };
+            let speed = match sub_menu.selection_value("选择速度") {
+                "None" => None,
+                speed => Some(speed.parse()?),
+            };
             Ok(Commands::UnpackDll(UnpackDllArgs {
                 dll: match sub_menu.selection_value("选择解压的 DLL") {
                     "ALL" => None,
                     spe => Some(spe.to_lowercase().parse().expect("TUI internal error")),
                 },
                 x86: sub_menu.selection_value("选择架构") == "x86",
-                speed: sub_menu.selection_value("选择速度").parse()?,
+                speed,
                 exec,
             }))
         }
@@ -93,8 +97,8 @@ fn speed_options() -> Vec<String> {
     let start = 10;
     let end = (SPEED_MAX * 10.0) as i32;
 
-    (start..=end)
-        .map(|x| format!("{:.1}", x as f32 / 10.0))
+    iter::once("None".to_string())
+        .chain((start..=end).map(|x| format!("{:.1}", x as f32 / 10.0)))
         .collect()
 }
 

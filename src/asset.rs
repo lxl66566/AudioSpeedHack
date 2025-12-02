@@ -11,7 +11,7 @@ use strum::IntoEnumIterator;
 use crate::{
     reg,
     utils::{
-        self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, SOUNDTOUCH_DLL_NAME, SPEED_MAX, SupportedDLLs,
+        self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, SOUNDTOUCH_DLL_NAME, SupportedDLLs,
     },
 };
 
@@ -49,11 +49,8 @@ pub fn extract_soundtouch_assets(
 /// 创建的文件路径
 pub fn extract_dsound_assets(
     system: utils::System,
-    speed: f32,
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {
-    assert!((1.0..=SPEED_MAX).contains(&speed));
-
     #[cfg(not(debug_assertions))]
     let dsound_archive = NamedArchive::load(include_dir!(
         "assets/dsound",
@@ -64,7 +61,7 @@ pub fn extract_dsound_assets(
     let dsound_archive = NamedArchive::load(include_dir!("assets/dsound"));
 
     let dsound_bytes: &[u8] = dsound_archive
-        .get(format!("dsound-{}-{:.1}.dll", system, speed).as_str())
+        .get(format!("dsound-{}.dll", system).as_str())
         .unwrap();
 
     let dsound_dest = dest.as_ref().join(DSOUND_DLL_NAME);
@@ -84,11 +81,8 @@ pub fn extract_dsound_assets(
 /// 创建的文件路径
 pub fn extract_mmdevapi_assets(
     system: utils::System,
-    speed: f32,
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {
-    assert!((1.0..=SPEED_MAX).contains(&speed));
-
     #[cfg(not(debug_assertions))]
     let mm_archive = NamedArchive::load(include_dir!(
         "assets/MMDevAPI",
@@ -99,7 +93,7 @@ pub fn extract_mmdevapi_assets(
     let mm_archive = NamedArchive::load(include_dir!("assets/MMDevAPI"));
 
     let mm_bytes = mm_archive
-        .get(format!("{}-{}-{:.1}.dll", "MMDevAPI", system, speed).as_str())
+        .get(format!("{}-{}.dll", "MMDevAPI", system).as_str())
         .unwrap();
     let mm_dest = dest.as_ref().join(MMDEVAPI_DLL_NAME);
     let mut ret = vec![];
@@ -115,13 +109,12 @@ pub fn extract_mmdevapi_assets(
 fn extract_specific_dll_and_reg(
     dll: SupportedDLLs,
     system: utils::System,
-    speed: f32,
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {
     let ret = match dll {
-        SupportedDLLs::DSound => extract_dsound_assets(system, speed, dest)?,
+        SupportedDLLs::DSound => extract_dsound_assets(system, dest)?,
         SupportedDLLs::MMDevAPI => {
-            let tmp = extract_mmdevapi_assets(system, speed, dest)?;
+            let tmp = extract_mmdevapi_assets(system, dest)?;
             reg::registry_op(&reg::RegistryOperation::Add, Some(dll))?;
             tmp
         }
@@ -138,15 +131,14 @@ fn extract_specific_dll_and_reg(
 pub fn extract_selected_and_reg(
     selected: Option<SupportedDLLs>,
     system: utils::System,
-    speed: f32,
     dest: impl AsRef<Path>,
 ) -> Result<Vec<PathBuf>> {
     let mut ret = extract_soundtouch_assets(system, &dest)?;
     if let Some(dll) = selected {
-        ret.extend(extract_specific_dll_and_reg(dll, system, speed, dest)?);
+        ret.extend(extract_specific_dll_and_reg(dll, system, dest)?);
     } else {
         for dll in SupportedDLLs::iter() {
-            ret.extend(extract_specific_dll_and_reg(dll, system, speed, &dest)?);
+            ret.extend(extract_specific_dll_and_reg(dll, system, &dest)?);
         }
     }
     Ok(ret)

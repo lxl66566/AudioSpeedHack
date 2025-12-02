@@ -8,7 +8,7 @@ license     = "MIT"
 name        = "AudioSpeedHack"
 readme      = "README.md"
 repository  = "https://github.com/lxl66566/AudioSpeedHack"
-version     = "1.1.0"
+version     = "1.2.0"
 
 [dependencies]
 anyhow               = "1.0.75"
@@ -22,6 +22,7 @@ serde                = "1.0.228"
 strum                = "0.27"
 strum_macros         = "0.27"
 terminal-menu        = "3.1.0"
+windows-env          = "0.2.0"
 windows_registry_obj = "0.1.0"
 
 [profile.release]

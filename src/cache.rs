@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     cli::{Commands, UnpackDllArgs},
     reg,
+    utils::SPEEDUP_ENV_NAME,
 };
 
 const DEFAULT_CACHE_PATH: &str = "cache.toml";
@@ -70,6 +71,18 @@ impl Cache {
                 _ => None,
             }),
         )?;
+        Ok(())
+    }
+
+    /// 清理 env SPEEDUP
+    pub fn clean_envs(&mut self) -> Result<()> {
+        let res = self.last_command.as_ref().and_then(|cmd| match cmd {
+            Commands::UnpackDll(UnpackDllArgs { speed, .. }) => *speed,
+            _ => None,
+        });
+        if res.is_some() {
+            windows_env::remove(SPEEDUP_ENV_NAME)?;
+        }
         Ok(())
     }
 
