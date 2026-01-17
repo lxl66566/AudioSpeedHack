@@ -2,3 +2,4 @@
 /test*
 cache.toml
 /*.dll
+/*.onnx

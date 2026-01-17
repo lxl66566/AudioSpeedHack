@@ -7,10 +7,10 @@ use anyhow::Result;
 use include_assets::{NamedArchive, include_dir};
 use log::info;
 
-use crate::{
-    reg,
-    utils::{self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, SOUNDTOUCH_DLL_NAME, SupportedDLLs},
-};
+use crate::utils::{
+        self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, ONNXRUNTIME_DLL_NAME, SOUNDTOUCH_DLL_NAME,
+        SupportedDLLs,
+    };
 
 pub fn extract_soundtouch_assets(
     system: utils::System,
@@ -36,6 +36,55 @@ pub fn extract_soundtouch_assets(
     }
     fs::write(st_dest, st_bytes)?;
     info!("Extracted {SOUNDTOUCH_DLL_NAME}");
+    Ok(ret)
+}
+
+pub fn extract_onnxruntime_assets(
+    system: utils::System,
+    dest: impl AsRef<Path>,
+) -> Result<Vec<PathBuf>> {
+    #[cfg(not(debug_assertions))]
+    let st_archive = NamedArchive::load(include_dir!(
+        "assets/onnxruntime",
+        compression = "zstd",
+        level = 22
+    ));
+    #[cfg(debug_assertions)]
+    let st_archive = NamedArchive::load(include_dir!("assets/onnxruntime"));
+
+    let st_bytes = st_archive
+        .get(format!("onnxruntime-{}.dll", system).as_str())
+        .unwrap();
+    let st_dest = dest.as_ref().join(ONNXRUNTIME_DLL_NAME);
+
+    let mut ret = vec![];
+    if !st_dest.exists() {
+        ret.push(st_dest.clone());
+    }
+    fs::write(st_dest, st_bytes)?;
+    info!("Extracted {ONNXRUNTIME_DLL_NAME}");
+    Ok(ret)
+}
+
+pub fn extract_model_assets(dest: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
+    #[cfg(not(debug_assertions))]
+    let st_archive = NamedArchive::load(include_dir!(
+        "assets/models",
+        compression = "zstd",
+        level = 22
+    ));
+    #[cfg(debug_assertions)]
+    let st_archive = NamedArchive::load(include_dir!("assets/models"));
+
+    let st_bytes = st_archive.get("silero_vad.onnx").unwrap();
+    let st_dest = dest.as_ref().join("silero_vad.onnx");
+
+    let mut ret = vec![];
+    if !st_dest.exists() {
+        ret.push(st_dest.clone());
+    }
+    fs::write(st_dest, st_bytes)?;
+    info!("Extracted silero_vad.onnx");
     Ok(ret)
 }
 
@@ -108,44 +157,32 @@ pub fn extract_mmdevapi_assets(
     Ok(ret)
 }
 
-fn extract_specific_dll_and_reg(
-    dll: SupportedDLLs,
-    system: utils::System,
-    dest: impl AsRef<Path>,
-) -> Result<Vec<PathBuf>> {
-    let ret = match dll {
-        SupportedDLLs::DSound | SupportedDLLs::DSoundZeroInterrupt => extract_dsound_assets(
-            system,
-            dest,
-            matches!(dll, SupportedDLLs::DSoundZeroInterrupt),
-        )?,
-        SupportedDLLs::MMDevAPI => {
-            let tmp = extract_mmdevapi_assets(system, dest)?;
-            reg::registry_op(&reg::RegistryOperation::Add, Some(dll))?;
-            tmp
-        }
-    };
-    Ok(ret)
+pub trait AssetOperations {
+    fn extract_dlls(&self, system: utils::System, dest: impl AsRef<Path>) -> Result<Vec<PathBuf>>;
 }
 
-/// 提取指定的 dll 到指定目录，如果为空，则提取全部加速相关 dll
-/// 如果该 dll 对应了需要写入的注册表，则写入注册表
-///
-/// # Returns
-///
-/// 成功则返回所有提取的 dll 的绝对路径
-pub fn extract_selected_and_reg(
-    selected: Option<SupportedDLLs>,
-    system: utils::System,
-    dest: impl AsRef<Path>,
-) -> Result<Vec<PathBuf>> {
-    let mut ret = extract_soundtouch_assets(system, &dest)?;
-    if let Some(dll) = selected {
-        ret.extend(extract_specific_dll_and_reg(dll, system, dest)?);
-    } else {
-        for dll in [SupportedDLLs::DSound, SupportedDLLs::MMDevAPI] {
-            ret.extend(extract_specific_dll_and_reg(dll, system, &dest)?);
-        }
+impl AssetOperations for SupportedDLLs {
+    fn extract_dlls(&self, system: utils::System, dest: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
+        let ret = match self {
+            SupportedDLLs::DSound => vec![
+                extract_soundtouch_assets(system, &dest)?,
+                extract_dsound_assets(system, &dest, false)?,
+            ],
+            SupportedDLLs::MMDevAPI => vec![
+                extract_soundtouch_assets(system, &dest)?,
+                extract_mmdevapi_assets(system, &dest)?,
+            ],
+            SupportedDLLs::ALL => vec![
+                extract_soundtouch_assets(system, &dest)?,
+                extract_dsound_assets(system, &dest, false)?,
+                extract_mmdevapi_assets(system, &dest)?,
+            ],
+            SupportedDLLs::DSoundZeroInterrupt => vec![
+                extract_dsound_assets(system, &dest, true)?,
+                extract_model_assets(&dest)?,
+                extract_onnxruntime_assets(system, &dest)?,
+            ],
+        };
+        Ok(ret.into_iter().flatten().collect())
     }
-    Ok(ret)
 }

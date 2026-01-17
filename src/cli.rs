@@ -37,9 +37,9 @@ pub enum Commands {
 /// 'unpack-dll' 命令的参数
 #[derive(Args, Debug, Serialize, Deserialize, Clone)]
 pub struct UnpackDllArgs {
-    /// 指定解压的 DLL 类型，未指定则解压全部加速相关 DLL
+    /// 指定解压的 DLL 类型
     #[arg(short, long)]
-    pub dll: Option<SupportedDLLs>,
+    pub dll: SupportedDLLs,
 
     /// 指定解压 x86 平台的 DLL (若不指定，则默认为 x64)
     #[arg(long)]

@@ -66,16 +66,15 @@ static MMDEVAPI_REGISTRY_ITEMS: Lazy<Vec<Registry<'static>>> = Lazy::new(|| {
     ].to_vec()
 });
 
-fn reg_iter<'a>(which: Option<SupportedDLLs>) -> impl Iterator<Item = &'a Registry<'a>> {
+fn reg_iter<'a>(which: SupportedDLLs) -> impl Iterator<Item = &'a Registry<'a>> {
     match which {
-        Some(SupportedDLLs::MMDevAPI) => MMDEVAPI_REGISTRY_ITEMS.iter(),
-        Some(_) => [].iter(),
-        _ => MMDEVAPI_REGISTRY_ITEMS.iter(),
+        SupportedDLLs::MMDevAPI | SupportedDLLs::ALL => MMDEVAPI_REGISTRY_ITEMS.iter(),
+        _ => [].iter(),
     }
 }
 
 /// 主函数，执行注册表的添加或删除操作。
-pub fn registry_op(operation: &RegistryOperation, which: Option<SupportedDLLs>) -> io::Result<()> {
+fn registry_op(operation: &RegistryOperation, which: SupportedDLLs) -> io::Result<()> {
     match operation {
         RegistryOperation::Add => {
             for item in reg_iter(which) {
@@ -94,4 +93,19 @@ pub fn registry_op(operation: &RegistryOperation, which: Option<SupportedDLLs>) 
     }
 
     Ok(())
+}
+
+pub trait RegOperations {
+    fn set_reg(&self) -> io::Result<()>;
+    fn clean_reg(&self) -> io::Result<()>;
+}
+
+impl RegOperations for SupportedDLLs {
+    fn set_reg(&self) -> io::Result<()> {
+        registry_op(&RegistryOperation::Add, *self)
+    }
+
+    fn clean_reg(&self) -> io::Result<()> {
+        registry_op(&RegistryOperation::Delete, *self)
+    }
 }
