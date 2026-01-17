@@ -10,6 +10,7 @@ use strum_macros::{Display, EnumIter, EnumString};
 pub const SPEED_MAX: f32 = 2.0;
 
 pub const SOUNDTOUCH_DLL_NAME: &str = "SoundTouch.dll";
+pub const ONNXRUNTIME_DLL_NAME: &str = "onnxruntime.dll";
 pub const DSOUND_DLL_NAME: &str = "dsound.dll";
 pub const MMDEVAPI_DLL_NAME: &str = "MMDevAPI.dll";
 pub const SPEEDUP_ENV_NAME: &str = "SPEEDUP";
@@ -20,7 +21,30 @@ pub const SPEEDUP_ENV_NAME: &str = "SPEEDUP";
 pub enum SupportedDLLs {
     DSound,
     MMDevAPI,
+    ALL,
     DSoundZeroInterrupt,
+}
+
+impl SupportedDLLs {
+    pub fn envs(&self) -> Vec<String> {
+        match self {
+            SupportedDLLs::DSound | SupportedDLLs::MMDevAPI | SupportedDLLs::ALL => {
+                vec![SPEEDUP_ENV_NAME.to_string()]
+            }
+            SupportedDLLs::DSoundZeroInterrupt => vec![],
+        }
+    }
+
+    pub fn set_env(&self, speed: f32) -> Result<()> {
+        match self {
+            SupportedDLLs::DSound | SupportedDLLs::MMDevAPI | SupportedDLLs::ALL => {
+                windows_env::set(SPEEDUP_ENV_NAME, format!("{:.1}", speed))?;
+                info!("env SPEEDUP set to {speed:.1}");
+            }
+            _ => {}
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy, Display, EnumString)]

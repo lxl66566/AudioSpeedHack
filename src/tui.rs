@@ -26,16 +26,17 @@ pub fn run_tui() -> Result<Cli> {
             env!("CARGO_PKG_VERSION"),
             "): ",
             env!("CARGO_PKG_REPOSITORY"),
-            "  请选择一个要执行的操作，按 q 退出:"
         )),
+        label("请选择一个要执行的操作，按 q 退出:"),
+        label(""),
         submenu("语音加速 (SPEEDUP)", speedup_menu()),
         submenu("语音不中断 (ZeroInterrupt)", zerointerrupt_menu()),
-        submenu("检测架构", detect_menu()),
+        submenu("检测架构 (Detect)", detect_menu()),
         button("Clean (清除 AudioSpeedHack 残留)"),
         button("Exit (退出)"),
     ];
     if prev_cli.is_some() {
-        main_menu_items.insert(1, button("使用上次参数运行"));
+        main_menu_items.insert(3, button("使用上次参数运行"));
     }
     let main_menu = menu(main_menu_items);
 
@@ -67,8 +68,8 @@ pub fn run_tui() -> Result<Cli> {
             };
             Ok(Commands::UnpackDll(UnpackDllArgs {
                 dll: match sub_menu.selection_value("选择解压的 DLL") {
-                    "ALL" => None,
-                    spe => Some(spe.to_lowercase().parse().expect("TUI internal error")),
+                    "ALL" => SupportedDLLs::ALL,
+                    spe => spe.to_lowercase().parse().expect("TUI internal error"),
                 },
                 x86: sub_menu.selection_value("选择架构") == "x86",
                 speed,
@@ -87,14 +88,14 @@ pub fn run_tui() -> Result<Cli> {
                 Some(exec_selection.into())
             };
             Ok(Commands::UnpackDll(UnpackDllArgs {
-                dll: Some(SupportedDLLs::DSoundZeroInterrupt),
+                dll: SupportedDLLs::DSoundZeroInterrupt,
                 x86: sub_menu.selection_value("选择架构") == "x86",
                 speed: None,
                 exec,
             }))
         }
-        "检测架构" => {
-            let sub_menu = tmp.get_submenu("检测架构");
+        "检测架构 (Detect)" => {
+            let sub_menu = tmp.get_submenu("检测架构 (Detect)");
             if sub_menu.canceled() {
                 anyhow::bail!("用户取消了操作。");
             }

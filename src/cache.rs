@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     cli::{Commands, UnpackDllArgs},
-    reg,
+    reg::RegOperations,
 };
 
 const DEFAULT_CACHE_PATH: &str = "cache.toml";
@@ -65,13 +65,14 @@ impl Cache {
 
     /// 清理注册表项，注册表从 last command 里获取
     pub fn clean_regs(&mut self) -> Result<()> {
-        reg::registry_op(
-            &reg::RegistryOperation::Delete,
-            self.last_command.as_ref().and_then(|cmd| match cmd {
-                Commands::UnpackDll(UnpackDllArgs { dll: res, .. }) => *res,
-                _ => None,
-            }),
-        )?;
+        let dlls = self.last_command.as_ref().and_then(|cmd| match cmd {
+            Commands::UnpackDll(UnpackDllArgs { dll, .. }) => Some(*dll),
+            _ => None,
+        });
+        if let Some(dlls) = dlls {
+            dlls.clean_reg()?;
+        }
+        // no need to modify self and store.
         Ok(())
     }
 
@@ -89,6 +90,7 @@ impl Cache {
             Some(dlls) => dlls.extend(newdlls),
             None => self.dll_paths = Some(newdlls),
         }
+        self.dll_paths.as_mut().unwrap().dedup();
         self.store()?;
         Ok(())
     }

@@ -13,9 +13,10 @@ use anyhow::Result;
 use clap::Parser;
 
 use crate::{
+    asset::AssetOperations,
     cache::GLOBAL_CACHE,
     cli::{Cli, Commands},
-    utils::{SPEEDUP_ENV_NAME, SupportedDLLs},
+    reg::RegOperations,
 };
 
 struct PauseGuard<'a> {
@@ -62,23 +63,20 @@ fn main() -> anyhow::Result<()> {
                 })
             });
 
-            let extracted = asset::extract_selected_and_reg(
-                args.dll,
-                exec_arch.unwrap_or(args.x86.into()),
-                env::current_dir()?,
-            )?;
-            GLOBAL_CACHE.lock().unwrap().extend_dlls(extracted)?;
-            if matches!(args.dll, Some(SupportedDLLs::DSoundZeroInterrupt)) {
-                GLOBAL_CACHE
-                    .lock()
-                    .unwrap()
-                    .extend_env_vars(vec![SPEEDUP_ENV_NAME.to_string()])?;
+            let extracted = args
+                .dll
+                .extract_dlls(exec_arch.unwrap_or(args.x86.into()), env::current_dir()?)?;
+            args.dll.set_reg()?;
+            if let Some(speed) = args.speed {
+                args.dll.set_env(speed)?;
             }
 
-            if let Some(speed) = args.speed {
-                windows_env::set(SPEEDUP_ENV_NAME, format!("{:.1}", speed))?;
-                info!("env SPEEDUP set to {speed:.1}");
+            {
+                let mut lock = GLOBAL_CACHE.lock().unwrap();
+                lock.extend_dlls(extracted)?;
+                lock.extend_env_vars(args.dll.envs())?;
             }
+
             drop(PauseGuard::new(
                 "DLL 解压成功，请自行启动游戏。游玩结束后，按 Enter 回滚变更，并退出程序。",
             ));
