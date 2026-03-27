@@ -32,11 +32,11 @@ pub fn run_tui() -> Result<Cli> {
         submenu("语音加速 (SPEEDUP)", speedup_menu()),
         submenu("语音不中断 (ZeroInterrupt)", zerointerrupt_menu()),
         submenu("检测架构 (Detect)", detect_menu()),
-        button("Clean (清除 AudioSpeedHack 残留)"),
-        button("Exit (退出)"),
+        button("清除残留 (Clean)"),
+        button("退出 (Exit)"),
     ];
     if prev_cli.is_some() {
-        main_menu_items.insert(3, button("使用上次参数运行"));
+        main_menu_items.insert(3, button("使用上次参数运行 (Previous selection)"));
     }
     let main_menu = menu(main_menu_items);
 
@@ -50,28 +50,29 @@ pub fn run_tui() -> Result<Cli> {
     let mut tmp = mut_menu(&main_menu);
     let chosen_command_name = tmp.selected_item_name();
     let command = match chosen_command_name {
-        "Clean (清除 AudioSpeedHack 残留)" => anyhow::Ok(Commands::Clean),
+        "清除残留 (Clean)" => anyhow::Ok(Commands::Clean),
         "语音加速 (SPEEDUP)" => {
             let sub_menu = tmp.get_submenu("语音加速 (SPEEDUP)");
             if sub_menu.canceled() {
                 anyhow::bail!("用户取消了操作。");
             }
-            let exec_selection = sub_menu.selection_value("游戏 exe，用于检测架构 (可选)");
+            let exec_selection =
+                sub_menu.selection_value("游戏 exe 用于检测架构 (exe for arch detect)");
             let exec = if exec_selection == NONE_EXEC_ITEM {
                 None
             } else {
                 Some(exec_selection.into())
             };
-            let speed = match sub_menu.selection_value("选择速度") {
+            let speed = match sub_menu.selection_value("选择速度 (Speed)") {
                 "None" => None,
                 speed => Some(speed.parse()?),
             };
             Ok(Commands::UnpackDll(UnpackDllArgs {
-                dll: match sub_menu.selection_value("选择解压的 DLL") {
+                dll: match sub_menu.selection_value("选择解压的 DLL (DLL Type)") {
                     "ALL" => SupportedDLLs::ALL,
                     spe => spe.to_lowercase().parse().expect("TUI internal error"),
                 },
-                x86: sub_menu.selection_value("选择架构") == "x86",
+                x86: sub_menu.selection_value("选择架构 (Arch)") == "x86",
                 speed,
                 exec,
             }))
@@ -81,7 +82,8 @@ pub fn run_tui() -> Result<Cli> {
             if sub_menu.canceled() {
                 anyhow::bail!("用户取消了操作。");
             }
-            let exec_selection = sub_menu.selection_value("游戏 exe，用于检测架构 (可选)");
+            let exec_selection =
+                sub_menu.selection_value("游戏 exe 用于检测架构 (exe for arch detect)");
             let exec = if exec_selection == NONE_EXEC_ITEM {
                 None
             } else {
@@ -89,7 +91,7 @@ pub fn run_tui() -> Result<Cli> {
             };
             Ok(Commands::UnpackDll(UnpackDllArgs {
                 dll: SupportedDLLs::DSoundZeroInterrupt,
-                x86: sub_menu.selection_value("选择架构") == "x86",
+                x86: sub_menu.selection_value("选择架构 (Arch)") == "x86",
                 speed: None,
                 exec,
             }))
@@ -99,7 +101,8 @@ pub fn run_tui() -> Result<Cli> {
             if sub_menu.canceled() {
                 anyhow::bail!("用户取消了操作。");
             }
-            let exec_selection = sub_menu.selection_value("游戏 exe，用于检测架构");
+            let exec_selection =
+                sub_menu.selection_value("游戏 exe 用于检测架构 (exe for arch detect)");
             let exe = if exec_selection == NONE_EXEC_ITEM {
                 anyhow::bail!("未指定游戏 exe")
             } else {
@@ -107,12 +110,12 @@ pub fn run_tui() -> Result<Cli> {
             };
             Ok(Commands::Detect(DetectArgs { exe }))
         }
-        "使用上次参数运行" => {
+        "使用上次参数运行 (Previous selection)" => {
             return Ok(Cli {
                 command: prev_cli.ok_or_else(|| anyhow::anyhow!("上次命令不存在"))?,
             });
         }
-        _ => anyhow::bail!("用户退出了程序。"),
+        _ => anyhow::bail!("用户退出了程序。(User canceled.)"),
     }?;
 
     Ok(Cli { command })
@@ -122,12 +125,18 @@ pub fn run_tui() -> Result<Cli> {
 fn speedup_menu() -> Vec<TerminalMenuItem> {
     vec![
         label("配置 加速 参数"),
-        list("选择解压的 DLL", vec!["MMDevAPI", "dsound", "ALL"]),
-        list("选择架构", vec!["Auto/x64", "x86"]),
-        list("选择速度", speed_options()),
-        list("游戏 exe，用于检测架构 (可选)", exec_options()),
-        button("确认！"),
-        back_button("Back (返回)"),
+        list(
+            "选择解压的 DLL (DLL Type)",
+            vec!["MMDevAPI", "dsound", "ALL"],
+        ),
+        list("选择架构 (Arch)", vec!["Auto/x64", "x86"]),
+        list("选择速度 (Speed)", speed_options()),
+        list(
+            "游戏 exe 用于检测架构 (exe for arch detect)",
+            exec_options(),
+        ),
+        button("确认 (Confirm)"),
+        back_button("返回 (Back)"),
     ]
 }
 
@@ -135,19 +144,25 @@ fn speedup_menu() -> Vec<TerminalMenuItem> {
 fn zerointerrupt_menu() -> Vec<TerminalMenuItem> {
     vec![
         label("配置 语音不中断 参数"),
-        list("选择架构", vec!["Auto/x64", "x86"]),
-        list("游戏 exe，用于检测架构 (可选)", exec_options()),
-        button("确认！"),
-        back_button("Back (返回)"),
+        list("选择架构 (Arch)", vec!["Auto/x64", "x86"]),
+        list(
+            "游戏 exe 用于检测架构 (exe for arch detect)",
+            exec_options(),
+        ),
+        button("确认 (Confirm)"),
+        back_button("返回 (Back)"),
     ]
 }
 
 fn detect_menu() -> Vec<TerminalMenuItem> {
     vec![
         label("检测架构"),
-        list("游戏 exe，用于检测架构", exec_options()),
-        button("确认！"),
-        back_button("Back (返回)"),
+        list(
+            "游戏 exe 用于检测架构 (exe for arch detect)",
+            exec_options(),
+        ),
+        button("确认 (Confirm)"),
+        back_button("返回 (Back)"),
     ]
 }
 
