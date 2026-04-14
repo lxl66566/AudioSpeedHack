@@ -11,6 +11,9 @@ A galgame toolset that includes several audio tools based on DLL injection.
 
 ## Quick Start
 
+> [!TIP]
+> AudioSpeedHack has been integrated into [GalgameManager](https://github.com/lxl66566/GalgameManager), includes full SPEEDUP and ZeroInterrupt functions. It is recommended to use [GalgameManager](https://github.com/lxl66566/GalgameManager) for the best GUI experience.
+
 1. Download the latest package from [Github Releases](https://github.com/lxl66566/AudioSpeedHack/releases), extract it, and place it in the game directory.
 2. Double-click to enter TUI mode and select _Voice Speedup (SPEEDUP)_:
    1. For the extracted DLL, generally choose `MMDevAPI`, as it has the broadest compatibility on modern Windows.
@@ -33,34 +36,36 @@ For more usage instructions, run `AudioSpeedHack -h` in the command line or read
 <!-- prettier-ignore -->
 |DLL|Architecture|Engine|Game Name|Test Version|
 |---|---|---|---|---|
-|dsound<br/>MMDevAPI|x64|Artemis|[FLIP＊FLOP](https://vndb.org/v39197) (full series)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Artemis|[The Chosen One of the Commoner](https://vndb.org/v47175)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Artemis|[Sakura no Toki](https://vndb.org/v20431)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|BGI|[The Shepherd of the Grand Library](https://vndb.org/v8158) (full series)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|BGI|[Jewellery Hearts Academia -We will wing wonder world-](https://vndb.org/v33175)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|FVP|[Irotoridori no Sekai](https://vndb.org/v5834)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|FVP|[Sakura, Moyu.](https://vndb.org/v22313)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Kirikiri|[Ruri Sakura](https://vndb.org/v30970)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Kirikiri|[Shiniyuku Kishi, Isekai ni Hibiku Zetsubōma](https://vndb.org/v49274)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Kirikiri|[Alice＊Gram](https://vndb.org/v19133) (full series)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Kirikiri|[Deep One](https://vndb.org/v22499)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Kirikiri|[SALTE](https://vndb.org/v26999)|v1.1.0|
+|dsound<br/>MMDevAPI|x64|Artemis|[FLIP＊FLOP](https://vndb.org/v39197)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Artemis|[天选庶民的真命之选](https://vndb.org/v47175)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Artemis|[樱之刻](https://vndb.org/v20431)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|BGI|[大图书馆的牧羊人](https://vndb.org/v8158)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|BGI|[ジュエリー・ハーツ・アカデミア -We will wing wonder world-](https://vndb.org/v33175)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|FVP|[五彩斑斓的世界](https://vndb.org/v5834)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|FVP|[樱花，萌放](https://vndb.org/v22313)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[瑠璃櫻](https://vndb.org/v30970)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[死に逝く騎士、異世界に響く断末魔](https://vndb.org/v49274)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[Alice＊Gram](https://vndb.org/v19133)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[Deep One -ディープワン](https://vndb.org/v22499)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[サルテ](https://vndb.org/v26999)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|MAGES. Engine|[Ever17](https://vndb.org/v19373)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Ren'Py|[Chaos;Head Noah](https://vndb.org/v22505)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|SiglusEngine|[Rainbow City](https://vndb.org/v48532)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Yaneurao|[Maho x Roba -Witches spiritual home-](https://vndb.org/v21455)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|YU-RIS|[Neko-nin Exheart](https://vndb.org/v45381) (full series)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|YU-RIS|[Unles Terminalia](https://vndb.org/v32757)|v1.1.0|
-|MMDevAPI|x64|Light.vn|[Katane Gai](https://vndb.org/v55892)|v1.1.0|
-|MMDevAPI|x64|LucaSystem|[Koi Tsumi - Tsukigami - FHD](https://vndb.org/v515)|v1.1.0|
-|MMDevAPI|x64|TyranoScript (electron)|[The Witch of the Wandering Tale](https://vndb.org/v32758)|v1.1.0|
-|MMDevAPI|x64|Unity|[Magical Girl Witch Trial](https://vndb.org/v50283)|v1.1.0|
-|MMDevAPI|x86|-|[Hakoniwa Logic](https://vndb.org/v14924)|v1.1.0|
-|MMDevAPI|x86|AliceSoft|[Rance 03 - The Fall of Leazas](https://vndb.org/v17642)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|SiglusEngine|[虹彩都市](https://vndb.org/v48532)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Yaneurao|[まほ×ろば -Witches spiritual home-](https://vndb.org/v21455)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|YU-RIS|[猫忍之心](https://vndb.org/v45381)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86|YU-RIS|[アンレス テルミナリア](https://vndb.org/v32757)|v1.1.0|
+|MMDevAPI|x64|FuriKuru|[諦観のイヴ・ベセル](https://vndb.org/v43113)|v1.2.0|
+|MMDevAPI|x64|Light.vn|[カタネガイ](https://vndb.org/v55892)|v1.1.0|
+|MMDevAPI|x64|LucaSystem|[恋狱～月狂病～ FHD](https://vndb.org/v515)|v1.1.0|
+|MMDevAPI|x64|TyranoScript (electron)|[传述之魔女](https://vndb.org/v32758)|v1.1.0|
+|MMDevAPI|x64|Unity|[魔法少女的魔女审判](https://vndb.org/v50283)|v1.1.0|
+|MMDevAPI|x86|-|[箱庭ロジック](https://vndb.org/v14924)|v1.1.0|
+|MMDevAPI|x86|AliceSoft|[ランス03 リーザス陥落](https://vndb.org/v17642)|v1.1.0|
 |MMDevAPI|x86|AVG32|[AIR](https://vndb.org/v36)|v1.1.0|
-|MMDevAPI|x86|CatSystem2|[The Fruit of Grisaia](https://vndb.org/v5154)|v1.1.0|
-|MMDevAPI|x86|QLIE|[Bishoujo Mangekyou: Ihen - Yuki Onna](https://vndb.org/v44184)|v1.1.0|
-|MMDevAPI|x86|Silky Engine|[Fuyu kara, Kururu.](https://vndb.org/v30012)|v1.1.0|
+|MMDevAPI|x86|CatSystem2|[灰色的果实](https://vndb.org/v5154)|v1.1.0|
+|MMDevAPI|x86|Escu:de|[廃村少女［弐］ ～陰り誘う秘姫の匣～](https://vndb.org/v53486)|v1.2.0|
+|MMDevAPI|x86|QLIE|[美少女万華鏡異聞 雪おんな](https://vndb.org/v44184)|v1.1.0|
+|MMDevAPI|x86|Silky Engine|[ふゆから、くるる。](https://vndb.org/v30012)|v1.1.0|
 
 ### ZeroInterrupt
 
@@ -138,7 +143,7 @@ Contributions of any kind (Issues/PRs) are welcome.
   - [x] MMDevAPI
 - [x] **Sound quality improvement**
 - [x] Uninterrupted voice
-- [ ] Better TUI interface, or GUI (In progress)
+- [x] Better TUI interface, or GUI
 
 ## License
 
