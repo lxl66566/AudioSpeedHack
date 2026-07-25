@@ -37,6 +37,7 @@
 |DLL|架构|引擎|游戏名|测试版本|
 |---|---|---|---|---|
 |dsound<br/>MMDevAPI|x64|Artemis|[FLIP＊FLOP](https://vndb.org/v39197)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x86||[サルテ](https://vndb.org/v26999)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Artemis|[天选庶民的真命之选](https://vndb.org/v47175)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Artemis|[樱之刻](https://vndb.org/v20431)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|BGI|[大图书馆的牧羊人](https://vndb.org/v8158)（全系列）|v1.1.0|
@@ -44,16 +45,19 @@
 |dsound<br/>MMDevAPI|x86|FVP|[五彩斑斓的世界](https://vndb.org/v5834)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|FVP|[樱花，萌放](https://vndb.org/v22313)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[瑠璃櫻](https://vndb.org/v30970)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[兽娘育成方案](https://vndb.org/v23281)|v1.2.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[死に逝く騎士、異世界に響く断末魔](https://vndb.org/v49274)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[紙の上の魔法使い](https://vndb.org/v15871)|v1.2.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[Alice＊Gram](https://vndb.org/v19133)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[Deep One -ディープワン](https://vndb.org/v22499)|v1.1.0|
-|dsound<br/>MMDevAPI|x86|Kirikiri|[サルテ](https://vndb.org/v26999)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|MAGES. Engine|[Ever17](https://vndb.org/v19373)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Ren'Py|[Chaos;Head Noah](https://vndb.org/v22505)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|SiglusEngine|[爱因斯坦携爱敬上](https://vndb.org/v24987)|v1.2.0|
 |dsound<br/>MMDevAPI|x86|SiglusEngine|[虹彩都市](https://vndb.org/v48532)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Yaneurao|[まほ×ろば -Witches spiritual home-](https://vndb.org/v21455)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[猫忍之心](https://vndb.org/v45381)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[アンレス テルミナリア](https://vndb.org/v32757)|v1.1.0|
+|dsound|x86|Kirikiri|[KANADE](https://vndb.org/v52778)|v1.2.0|
 |MMDevAPI|x64|FuriKuru|[諦観のイヴ・ベセル](https://vndb.org/v43113)|v1.2.0|
 |MMDevAPI|x64|Light.vn|[カタネガイ](https://vndb.org/v55892)|v1.1.0|
 |MMDevAPI|x64|LucaSystem|[恋狱～月狂病～ FHD](https://vndb.org/v515)|v1.1.0|
@@ -63,6 +67,7 @@
 |MMDevAPI|x86|AliceSoft|[ランス03 リーザス陥落](https://vndb.org/v17642)|v1.1.0|
 |MMDevAPI|x86|AVG32|[AIR](https://vndb.org/v36)|v1.1.0|
 |MMDevAPI|x86|CatSystem2|[灰色的果实](https://vndb.org/v5154)|v1.1.0|
+|MMDevAPI|x86|EntisGLS|[缘之空](https://vndb.org/v1194)|v1.2.0|
 |MMDevAPI|x86|Escu:de|[廃村少女［弐］ ～陰り誘う秘姫の匣～](https://vndb.org/v53486)|v1.2.0|
 |MMDevAPI|x86|QLIE|[美少女万華鏡異聞 雪おんな](https://vndb.org/v44184)|v1.1.0|
 |MMDevAPI|x86|Silky Engine|[ふゆから、くるる。](https://vndb.org/v30012)|v1.1.0|
