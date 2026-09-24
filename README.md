@@ -57,7 +57,10 @@
 |dsound<br/>MMDevAPI|x86|Yaneurao|[まほ×ろば -Witches spiritual home-](https://vndb.org/v21455)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[猫忍之心](https://vndb.org/v45381)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[アンレス テルミナリア](https://vndb.org/v32757)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|YU-RIS|[けもの道☆ガーリッシュスクエア](https://vndb.org/v31669)（全系列）|v1.2.0|
+|dsound|x64|Kirikiri|[DRACU-RIOT! QHD Edition](https://vndb.org/v8213)|v1.2.0|
 |dsound|x86|Kirikiri|[KANADE](https://vndb.org/v52778)|v1.2.0|
+|dsound|x86|Nitro+|[鬼哭街 -涙尽鈴音響-](https://vndb.org/v183)|v1.2.0|
 |MMDevAPI|x64|FuriKuru|[諦観のイヴ・ベセル](https://vndb.org/v43113)|v1.2.0|
 |MMDevAPI|x64|Light.vn|[カタネガイ](https://vndb.org/v55892)|v1.1.0|
 |MMDevAPI|x64|LucaSystem|[恋狱～月狂病～ FHD](https://vndb.org/v515)|v1.1.0|
