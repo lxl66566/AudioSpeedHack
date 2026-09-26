@@ -66,6 +66,14 @@ fn main() -> anyhow::Result<()> {
             let extracted = args
                 .dll
                 .extract_dlls(exec_arch.unwrap_or(args.x86.into()), env::current_dir()?)?;
+            // mmdevapi 的注册表指向转发桩的绝对路径，需先部署桩；
+            // 桩对非游戏进程纯透传，不纳入回滚清理
+            if matches!(
+                args.dll,
+                utils::SupportedDLLs::MMDevAPI | utils::SupportedDLLs::ALL
+            ) {
+                asset::extract_mmdevapi_stub_assets()?;
+            }
             args.dll.set_reg()?;
             if let Some(speed) = args.speed {
                 args.dll.set_env(speed)?;

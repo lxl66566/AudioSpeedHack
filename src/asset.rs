@@ -5,12 +5,12 @@ use std::{
 
 use anyhow::Result;
 use include_assets::{NamedArchive, include_dir};
-use log::info;
+use log::{info, warn};
 
 use crate::utils::{
-        self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, ONNXRUNTIME_DLL_NAME, SOUNDTOUCH_DLL_NAME,
-        SupportedDLLs,
-    };
+    self, DSOUND_DLL_NAME, MMDEVAPI_DLL_NAME, ONNXRUNTIME_DLL_NAME, SOUNDTOUCH_DLL_NAME,
+    SupportedDLLs,
+};
 
 pub fn extract_soundtouch_assets(
     system: utils::System,
@@ -155,6 +155,45 @@ pub fn extract_mmdevapi_assets(
     fs::write(mm_dest, mm_bytes)?;
     info!("Extracted {}", MMDEVAPI_DLL_NAME);
     Ok(ret)
+}
+
+/// mmdevapi 注册表转发桩的部署位置：工具 exe 同目录。
+/// 注册表用绝对路径引用桩，因此位置必须稳定；放 exe 目录保持工具便携。
+pub fn mmdevapi_stub_path(system: utils::System) -> PathBuf {
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(Path::to_path_buf))
+        .unwrap_or_else(|| PathBuf::from("."));
+    exe_dir.join(format!("MMDevAPI-stub-{system}.dll"))
+}
+
+/// 提取注册表转发桩（两个架构）到 exe 同目录，每次覆盖写入以跟进版本。
+/// 桩对非游戏进程是纯透传，残留无副作用，因此不纳入回滚清理；
+/// 文件被占用（游戏运行中）时保留旧桩即可。
+pub fn extract_mmdevapi_stub_assets() -> Result<()> {
+    #[cfg(not(debug_assertions))]
+    let mm_archive = NamedArchive::load(include_dir!(
+        "assets/MMDevAPI",
+        compression = "zstd",
+        level = 22
+    ));
+    #[cfg(debug_assertions)]
+    let mm_archive = NamedArchive::load(include_dir!("assets/MMDevAPI"));
+
+    for system in [utils::System::X64, utils::System::X86] {
+        let stub = mmdevapi_stub_path(system);
+        let bytes = mm_archive
+            .get(format!("MMDevAPI-stub-{system}.dll").as_str())
+            .unwrap();
+        if let Err(e) = fs::write(&stub, bytes) {
+            if !stub.exists() {
+                return Err(e.into());
+            }
+            warn!("桩 {stub:?} 被占用，保留旧版本: {e}");
+        }
+        info!("Deployed stub {:?}", stub);
+    }
+    Ok(())
 }
 
 pub trait AssetOperations {
