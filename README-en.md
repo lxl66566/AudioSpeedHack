@@ -81,9 +81,10 @@ For more usage instructions, run `AudioSpeedHack -h` in the command line or read
 <!-- prettier-ignore -->
 |Engine|Game Name|Test Version|Availability|
 |---|---|---|---|
+|BGI (x86)|[大图书馆的牧羊人](https://vndb.org/v8158)（全系列）<br/>[ジュエリー・ハーツ・アカデミア -We will wing wonder world-](https://vndb.org/v33175)|v1.2.0|❔|
 |Kirikiri (x86)|*|v1.2.0|❌|
-|BGI (x86)|[The Shepherd of the Grand Library](https://vndb.org/v8158) (full series)<br/>[Jewellery Hearts Academia -We will wing wonder world-](https://vndb.org/v33175)|v1.2.0|❔|
 |MAGES. Engine (x86)|[Ever17](https://vndb.org/v19373)|v1.2.0|✅|
+|majiro (x86)|[ルリのかさね ～いもうと物語り～](https://vndb.org/v21145)|v1.3.0❌|
 
 ## Principle
 
@@ -126,10 +127,10 @@ V0 has lower sound quality and is more cumbersome to use. Unless you encounter b
        - `Path` contains `mmdevapi`
     5. Check the result list. If matching entries are found, this tool is likely applicable.
 
-- No sound when launching the game  
-  0. First, check your device and system volume to ensure audio plays normally without using this tool.
-  1. Try using a specific DLL, such as only MMDevAPI instead of ALL, with 2.0x speed.
-  2. Submit an issue.
+- No sound when launching the game
+  1. First, check your device and system volume to ensure audio plays normally without using this tool.
+  2. Try using a specific DLL, such as only MMDevAPI instead of ALL, with 2.0x speed.
+  3. Submit an issue.
 
 - Actual speed exceeds the set value
   - Check if "Unpack ALL" was used. For programs that support both dsound and MMDevAPI, audio may be accelerated twice.
