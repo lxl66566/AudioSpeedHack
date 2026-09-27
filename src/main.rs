@@ -43,7 +43,10 @@ fn main() -> Result<()> {
         Cli::parse()
     } else {
         info!("TUI mode");
-        tui::run_tui()?
+        let Some(cli) = tui::run_tui()? else {
+            return Ok(()); // 用户在 TUI 中主动退出
+        };
+        cli
     };
 
     info!("args: {cli:?}");

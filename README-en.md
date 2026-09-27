@@ -37,6 +37,7 @@ For more usage instructions, run `AudioSpeedHack -h` in the command line or read
 |DLL|Architecture|Engine|Game Name|Test Version|
 |---|---|---|---|---|
 |dsound<br/>MMDevAPI|x64|Artemis|[FLIP＊FLOP](https://vndb.org/v39197)（全系列）|v1.1.0|
+|dsound<br/>MMDevAPI|x64|Kirikiri|[DRACU-RIOT! QHD Edition](https://vndb.org/v8213)|v1.3.0|
 |dsound<br/>MMDevAPI|x86||[サルテ](https://vndb.org/v26999)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Artemis|[天选庶民的真命之选](https://vndb.org/v47175)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Artemis|[樱之刻](https://vndb.org/v20431)|v1.1.0|
@@ -50,14 +51,16 @@ For more usage instructions, run `AudioSpeedHack -h` in the command line or read
 |dsound<br/>MMDevAPI|x86|Kirikiri|[紙の上の魔法使い](https://vndb.org/v15871)|v1.2.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[Alice＊Gram](https://vndb.org/v19133)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Kirikiri|[Deep One -ディープワン](https://vndb.org/v22499)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Kirikiri|[KANADE](https://vndb.org/v52778)|v1.3.0|
 |dsound<br/>MMDevAPI|x86|MAGES. Engine|[Ever17](https://vndb.org/v19373)|v1.1.0|
+|dsound<br/>MMDevAPI|x86|Nitro+|[鬼哭街 -涙尽鈴音響-](https://vndb.org/v183)|v1.3.0|
 |dsound<br/>MMDevAPI|x86|Ren'Py|[Chaos;Head Noah](https://vndb.org/v22505)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|SiglusEngine|[爱因斯坦携爱敬上](https://vndb.org/v24987)|v1.2.0|
 |dsound<br/>MMDevAPI|x86|SiglusEngine|[虹彩都市](https://vndb.org/v48532)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|Yaneurao|[まほ×ろば -Witches spiritual home-](https://vndb.org/v21455)|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[猫忍之心](https://vndb.org/v45381)（全系列）|v1.1.0|
 |dsound<br/>MMDevAPI|x86|YU-RIS|[アンレス テルミナリア](https://vndb.org/v32757)|v1.1.0|
-|dsound|x86|Kirikiri|[KANADE](https://vndb.org/v52778)|v1.2.0|
+|dsound<br/>MMDevAPI|x86|YU-RIS|[けもの道☆ガーリッシュスクエア](https://vndb.org/v31669)（全系列）|v1.2.0|
 |MMDevAPI|x64|FuriKuru|[諦観のイヴ・ベセル](https://vndb.org/v43113)|v1.2.0|
 |MMDevAPI|x64|Light.vn|[カタネガイ](https://vndb.org/v55892)|v1.1.0|
 |MMDevAPI|x64|LucaSystem|[恋狱～月狂病～ FHD](https://vndb.org/v515)|v1.1.0|
