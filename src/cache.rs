@@ -47,19 +47,19 @@ impl Cache {
         dlls.push("SPEEDUP_announcement.txt".into());
         let mut process_result = Ok(());
         while let Some(dll) = dlls.pop() {
-            if let Err(e) = std::fs::remove_file(&dll) {
+            if let Err(e) = fs::remove_file(&dll) {
                 if e.kind() == std::io::ErrorKind::NotFound {
-                    warn!("文件 {dll:?} 不存在，跳过删除");
+                    warn!("文件 {} 不存在，跳过删除", dll.display());
                     continue;
                 }
                 dlls.push(dll);
                 process_result = Err(e.into());
                 break;
             }
-            info!("成功删除文件：{dll:?}");
+            info!("成功删除文件：{}", dll.display());
         }
         self.dll_paths = Some(dlls);
-        self.store()?;
+        self.save()?;
         process_result
     }
 
@@ -79,9 +79,10 @@ impl Cache {
     /// 清理 env
     pub fn clean_envs(&mut self) -> Result<()> {
         let envs = self.env_vars.take().unwrap_or_default();
-        envs.iter()
-            .for_each(|env| windows_env::remove(env).unwrap());
-        self.store()?;
+        for env in &envs {
+            windows_env::remove(env).unwrap();
+        }
+        self.save()?;
         Ok(())
     }
 
@@ -91,7 +92,7 @@ impl Cache {
             None => self.dll_paths = Some(newdlls),
         }
         self.dll_paths.as_mut().unwrap().dedup();
-        self.store()?;
+        self.save()?;
         Ok(())
     }
 
@@ -100,7 +101,7 @@ impl Cache {
             Some(envs) => envs.extend(newenvs),
             None => self.env_vars = Some(newenvs),
         }
-        self.store()?;
+        self.save()?;
         Ok(())
     }
 
@@ -110,7 +111,7 @@ impl Cache {
             return Ok(());
         }
         self.last_command = Some(cmd);
-        self.store()?;
+        self.save()?;
         Ok(())
     }
 

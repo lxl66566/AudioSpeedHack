@@ -26,7 +26,7 @@ pub fn extract_soundtouch_assets(
     let st_archive = NamedArchive::load(include_dir!("assets/SoundTouch"));
 
     let st_bytes = st_archive
-        .get(format!("SoundTouch-{}.dll", system).as_str())
+        .get(format!("SoundTouch-{system}.dll").as_str())
         .unwrap();
     let st_dest = dest.as_ref().join(SOUNDTOUCH_DLL_NAME);
 
@@ -53,7 +53,7 @@ pub fn extract_onnxruntime_assets(
     let st_archive = NamedArchive::load(include_dir!("assets/onnxruntime"));
 
     let st_bytes = st_archive
-        .get(format!("onnxruntime-{}.dll", system).as_str())
+        .get(format!("onnxruntime-{system}.dll").as_str())
         .unwrap();
     let st_dest = dest.as_ref().join(ONNXRUNTIME_DLL_NAME);
 
@@ -107,10 +107,10 @@ pub fn extract_dsound_assets(
     #[cfg(debug_assertions)]
     let dsound_archive = NamedArchive::load(include_dir!("assets/dsound"));
 
-    let dsound_src = if !zerointerrupt {
-        format!("dsound-{}.dll", system)
+    let dsound_src = if zerointerrupt {
+        format!("dsound-zerointerrupt-{system}.dll")
     } else {
-        format!("dsound-zerointerrupt-{}.dll", system)
+        format!("dsound-{system}.dll")
     };
 
     let dsound_bytes: &[u8] = dsound_archive.get(&dsound_src).unwrap();
@@ -121,7 +121,7 @@ pub fn extract_dsound_assets(
         ret.push(dsound_dest.clone());
     }
     fs::write(dsound_dest, dsound_bytes)?;
-    info!("Extracted {}", DSOUND_DLL_NAME);
+    info!("Extracted {DSOUND_DLL_NAME}");
     Ok(ret)
 }
 
@@ -153,12 +153,13 @@ pub fn extract_mmdevapi_assets(
         ret.push(mm_dest.clone());
     }
     fs::write(mm_dest, mm_bytes)?;
-    info!("Extracted {}", MMDEVAPI_DLL_NAME);
+    info!("Extracted {MMDEVAPI_DLL_NAME}");
     Ok(ret)
 }
 
 /// mmdevapi 注册表转发桩的部署位置：工具 exe 同目录。
 /// 注册表用绝对路径引用桩，因此位置必须稳定；放 exe 目录保持工具便携。
+#[must_use]
 pub fn mmdevapi_stub_path(system: utils::System) -> PathBuf {
     let exe_dir = std::env::current_exe()
         .ok()
@@ -189,9 +190,9 @@ pub fn extract_mmdevapi_stub_assets() -> Result<()> {
             if !stub.exists() {
                 return Err(e.into());
             }
-            warn!("桩 {stub:?} 被占用，保留旧版本: {e}");
+            warn!("桩 {} 被占用，保留旧版本: {e}", stub.display());
         }
-        info!("Deployed stub {:?}", stub);
+        info!("Deployed stub {}", stub.display());
     }
     Ok(())
 }

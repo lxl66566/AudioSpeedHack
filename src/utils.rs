@@ -26,6 +26,7 @@ pub enum SupportedDLLs {
 }
 
 impl SupportedDLLs {
+    #[must_use]
     pub fn envs(&self) -> Vec<String> {
         match self {
             SupportedDLLs::DSound | SupportedDLLs::MMDevAPI | SupportedDLLs::ALL => {
@@ -38,10 +39,10 @@ impl SupportedDLLs {
     pub fn set_env(&self, speed: f32) -> Result<()> {
         match self {
             SupportedDLLs::DSound | SupportedDLLs::MMDevAPI | SupportedDLLs::ALL => {
-                windows_env::set(SPEEDUP_ENV_NAME, format!("{:.1}", speed))?;
+                windows_env::set(SPEEDUP_ENV_NAME, format!("{speed:.1}"))?;
                 info!("env SPEEDUP set to {speed:.1}");
             }
-            _ => {}
+            SupportedDLLs::DSoundZeroInterrupt => {}
         }
         Ok(())
     }

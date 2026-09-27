@@ -1,8 +1,12 @@
 name: rust release action
+
 on:
   push:
     tags:
       - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -11,12 +15,10 @@ jobs:
       matrix:
         os: [windows-latest]
     steps:
-      - uses: actions/checkout@v5
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v7
       - name: release rust project
         uses: lxl66566/rust-simple-release@main
         with:
           targets: |
+            aarch64-pc-windows-msvc
             x86_64-pc-windows-msvc
-          token: ${{ secrets.GH_TOKEN }}

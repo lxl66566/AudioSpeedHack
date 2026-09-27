@@ -104,9 +104,9 @@ fn registry_op(operation: &RegistryOperation, which: SupportedDLLs) -> io::Resul
         RegistryOperation::Delete => {
             for item in reg_iter(which) {
                 match item.remove_registry() {
-                    Ok(_) => info!("registry removed: {:?}", item.full_path()),
+                    Ok(()) => info!("registry removed: {:?}", item.full_path()),
                     Err(e) => log::warn!("failed to remove registry {:?}: {}", item.full_path(), e),
-                };
+                }
             }
         }
     }

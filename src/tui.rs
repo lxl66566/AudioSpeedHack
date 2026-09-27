@@ -168,12 +168,14 @@ fn detect_menu() -> Vec<TerminalMenuItem> {
 
 /// 生成速度选项 (1.0 ~ 2.0)
 fn speed_options() -> Vec<String> {
-    // 逻辑：从 10 迭代到 SPEED_MAX * 10 (例如 20)
+    // 逻辑：从 10 迭代到 SPEED_MAX * 10 (例如 20)，用整数十分位构造，避免浮点格式化误差
     let start = 10;
+    // SPEED_MAX 为整数值常量，x10 后无截断
+    #[allow(clippy::cast_possible_truncation)]
     let end = (SPEED_MAX * 10.0) as i32;
 
     iter::once("None".to_string())
-        .chain((start..=end).map(|x| format!("{:.1}", x as f32 / 10.0)))
+        .chain((start..=end).map(|x| format!("{}.{}", x / 10, x % 10)))
         .collect()
 }
 
@@ -184,7 +186,7 @@ fn exec_options() -> Vec<String> {
     if let Ok(entries) = fs::read_dir(".") {
         for entry in entries
             .flatten()
-            .filter(|e| e.file_type().map(|t| t.is_file()).unwrap_or(false))
+            .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
             .filter(|e| {
                 // 过滤掉自身
                 if let Some(name) = e.file_name().to_str()

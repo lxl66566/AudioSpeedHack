@@ -29,24 +29,24 @@ impl<'a> PauseGuard<'a> {
     }
 }
 
-impl<'a> Drop for PauseGuard<'a> {
+impl Drop for PauseGuard<'_> {
     fn drop(&mut self) {
         println!("{}", self.msg);
         std::io::stdin().read_line(&mut String::new()).unwrap();
     }
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     log::log_init();
 
-    let cli = if std::env::args().len() > 1 {
+    let cli = if env::args().len() > 1 {
         Cli::parse()
     } else {
         info!("TUI mode");
         tui::run_tui()?
     };
 
-    info!("args: {:?}", cli);
+    info!("args: {cli:?}");
 
     GLOBAL_CACHE
         .lock()
