@@ -9,10 +9,7 @@ use config_file2::{LoadConfigFile, Storable};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    cli::{Commands, UnpackDllArgs},
-    reg::RegOperations,
-};
+use crate::cli::Commands;
 
 const DEFAULT_CACHE_PATH: &str = "cache.toml";
 pub static GLOBAL_CACHE: Lazy<Mutex<Cache>> = Lazy::new(|| {
@@ -63,19 +60,6 @@ impl Cache {
         process_result
     }
 
-    /// 清理注册表项，注册表从 last command 里获取
-    pub fn clean_regs(&mut self) -> Result<()> {
-        let dlls = self.last_command.as_ref().and_then(|cmd| match cmd {
-            Commands::UnpackDll(UnpackDllArgs { dll, .. }) => Some(*dll),
-            _ => None,
-        });
-        if let Some(dlls) = dlls {
-            dlls.clean_reg()?;
-        }
-        // no need to modify self and store.
-        Ok(())
-    }
-
     /// 清理 env
     pub fn clean_envs(&mut self) -> Result<()> {
         let envs = self.env_vars.take().unwrap_or_default();
@@ -115,8 +99,12 @@ impl Cache {
         Ok(())
     }
 
+    /// 删除 cache 文件；不存在视为已清理，保证 clean 可重复执行
     pub fn clean_self(&mut self) -> Result<()> {
-        fs::remove_file(DEFAULT_CACHE_PATH)?;
-        Ok(())
+        match fs::remove_file(DEFAULT_CACHE_PATH) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(e.into()),
+        }
     }
 }

@@ -29,7 +29,7 @@ serde                = "1"
 strum                = "0.28"
 strum_macros         = "0.28"
 windows-env          = "0.3.0"
-windows_registry_obj = "0.1.0"
+windows_registry_obj = "0.2"
 
 [dev-dependencies]
 unicode-width = "0.2.2"

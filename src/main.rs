@@ -16,7 +16,6 @@ use crate::{
     asset::AssetOperations,
     cache::GLOBAL_CACHE,
     cli::{Cli, Commands},
-    reg::RegOperations,
 };
 
 struct PauseGuard<'a> {
@@ -77,7 +76,7 @@ fn main() -> Result<()> {
             ) {
                 asset::extract_mmdevapi_stub_assets()?;
             }
-            args.dll.set_reg()?;
+            reg::set_reg(args.dll)?;
             if let Some(speed) = args.speed {
                 args.dll.set_env(speed)?;
             }
@@ -106,7 +105,7 @@ fn main() -> Result<()> {
 }
 
 fn clean() -> Result<()> {
-    GLOBAL_CACHE.lock().unwrap().clean_regs()?;
+    reg::clean_reg()?;
     GLOBAL_CACHE.lock().unwrap().clean_dlls()?;
     GLOBAL_CACHE.lock().unwrap().clean_envs()?;
     Ok(())
